@@ -17,7 +17,7 @@ export default function StravaLogInButton() {
   }
 
   return (
-    <Button onClick={handleLogin}>
+    <Button onClick={handleLogin} className="bg-strava hover:bg-strava/80 w-full">
       Log in to Strava
     </Button>
   )

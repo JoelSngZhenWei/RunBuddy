@@ -9,7 +9,7 @@ export default function Plan() {
   const [focus, setFocus] = React.useState<"input" | "output">("input")
 
   return (
-    <div className="flex flex-col-2 gap-2 p-2 min-h-[96vh]">
+    <div className="flex flex-col-2 gap-2 p-2 min-h-[95vh]">
       {/* Input Section */}
       <div
         onClick={() => setFocus("input")}
@@ -20,14 +20,14 @@ export default function Plan() {
             : "flex-[1] opacity-50 hover:opacity-100"
         )}
       >
-        <PlanInput />
+        <PlanInput focus={focus}/>
       </div>
 
       {/* Output Section */}
       <div
         onClick={() => setFocus("output")}
         className={cn(
-          "transition-all duration-500 ease-in-out max-h-[95vh]",
+          "transition-all duration-500 ease-in-out max-h-[94.8vh]",
           focus === "output"
             ? "flex-[5] "
             : "flex-[1] opacity-50 hover:opacity-100"

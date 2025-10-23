@@ -6,25 +6,33 @@ import { Activity, Bot, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 
-export default function PlanInput() {
+export default function PlanInput({
+    focus,
+}: {
+    focus: "input" | "output"
+}) {
     const handleAutofill = async () => {
         console.log("Fetching Strava-based recommendations...")
     }
-
+    const showDescriptions = focus === "input"
     return (
         <Card className="w-full h-full relative">
             <CardHeader className="">
                 <CardTitle>Design your plan</CardTitle>
-                <CardDescription>Customize or auto-fill from your Strava runs.</CardDescription>
-                <CardAction className="h-full">
+                {showDescriptions && (
+                    <CardDescription>
+                        Customize or auto-fill from your Strava runs.
+                    </CardDescription>
+                )}
+                <CardAction className="h-12">
                     <TooltipProvider>
                         <Tooltip>
-                            <TooltipTrigger asChild>
+                            <TooltipTrigger asChild className="h-12">
                                 <Button
                                     title="Autofill from Strava"
-                                    variant="secondary"
+                                    variant="ghost"
                                     size="icon-lg"
-                                    className="rounded-full bg-strava text-background h-full hover:bg-secondary hover:text-strava transition-colors"
+                                    className="rounded-full w-12 text-strava h-full  hover:text-strava/80 border cursor-pointer transition-colors"
                                     onClick={handleAutofill}
                                 >
                                     <Bot className="h-full w-full" />
@@ -40,7 +48,7 @@ export default function PlanInput() {
             </CardHeader>
 
             <CardContent>
-                <PlanInputForm />
+                <PlanInputForm focus={focus} />
             </CardContent>
         </Card>
     )

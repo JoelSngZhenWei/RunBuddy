@@ -79,8 +79,8 @@ export default function ActivitiesList() {
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">No activities match your filters.</p>
       ) : (
-        <ScrollArea className="h-[89vh] w-full rounded-md border p-3 bg-card">
-          <div className="grid gap-4">
+        <ScrollArea className="h-[89.2vh] w-full rounded-md border p-3 bg-card">
+          <div className="grid gap-4 ">
             {filtered.map((a) => (
               <ActivityCard
                 key={a.id}

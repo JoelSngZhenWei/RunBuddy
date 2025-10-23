@@ -8,7 +8,9 @@ export default async function Home() {
   return (
     <div className="space-y-4 p-3">
       {!token ? (
-        <StravaLogInButton />
+        <div className="w-xs">
+          <StravaLogInButton />
+        </div>
       ) : (
         <>
           <ActivitiesList />

@@ -4,7 +4,7 @@ import { ScrollArea } from "./ui/scroll-area";
 export default function PlanOutputDetails() {
     return (
         <CardContent className="space-y-6 text-sm">
-            <ScrollArea className="h-[85vh]">
+            <ScrollArea className="h-[85vh] pb-2">
                 {/* Training Plan Section */}
                 <div>
                     <h3 className="font-semibold text-base mb-1">5-Week Half Marathon Plan</h3>

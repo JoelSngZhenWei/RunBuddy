@@ -1,8 +1,7 @@
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator } from "@/components/ui/sidebar"
 import { Code, Home, Sparkles } from "lucide-react"
-import { FaRunning } from "react-icons/fa"
-import { AppSidebarUser } from "./AppSidebarUser"
 import { AppSidebarTitle } from "./AppSidebarTitle"
+import AppSidebarUserWrapper from "./AppSidebarUserWrapper"
 
 const navigation = [
     {
@@ -30,10 +29,9 @@ const user = {
 
 export function AppSidebar() {
     return (
-        <Sidebar collapsible="icon">
+        <Sidebar collapsible="icon" className="" variant="floating">
             <AppSidebarTitle />
-
-            <SidebarContent>
+            <SidebarContent className="">
                 <SidebarGroup>
                     <SidebarGroupContent>
                         <SidebarMenu>
@@ -53,9 +51,8 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
-                <AppSidebarUser user={user} />
+                <AppSidebarUserWrapper />
             </SidebarFooter>
-            <SidebarRail />
         </Sidebar>
     )
 }

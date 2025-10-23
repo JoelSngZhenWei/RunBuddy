@@ -21,7 +21,7 @@ import { trainingPlanSchema } from "@/lib/schemas/TrainingPlanSchema"
 
 type FormValues = z.infer<typeof trainingPlanSchema>
 
-export function PlanInputForm() {
+export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
     const form = useForm<FormValues>({
         resolver: zodResolver(trainingPlanSchema),
         defaultValues: {
@@ -40,10 +40,12 @@ export function PlanInputForm() {
         console.log("submitted:", values)
     }
 
+    const showDescriptions = focus === "input"
+
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                
+
                 <div className="grid grid-rows-4 gap-8">
                     {/* form row 1 */}
                     <div className="grid grid-cols-2 gap-4">
@@ -57,9 +59,11 @@ export function PlanInputForm() {
                                     <FormControl>
                                         <Input placeholder="Half Marathon" {...field} />
                                     </FormControl>
-                                    <FormDescription>
-                                        The distance or race you’re training for.
-                                    </FormDescription>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            The distance or race you’re training for.
+                                        </FormDescription>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -74,9 +78,11 @@ export function PlanInputForm() {
                                     <FormControl>
                                         <Input placeholder="Finish under 2 hours" {...field} />
                                     </FormControl>
-                                    <FormDescription>
-                                        Describe your performance target or goal.
-                                    </FormDescription>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            Describe your performance target or goal.
+                                        </FormDescription>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -102,9 +108,11 @@ export function PlanInputForm() {
                                             onChange={(e) => field.onChange(Number(e.target.value))}
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        How many days you can train per week.
-                                    </FormDescription>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            How many days you can train per week.
+                                        </FormDescription>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -125,9 +133,11 @@ export function PlanInputForm() {
                                             onChange={(e) => field.onChange(Number(e.target.value))}
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        Approximate weekly mileage currently.
-                                    </FormDescription>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            Approximate weekly mileage currently.
+                                        </FormDescription>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -145,9 +155,11 @@ export function PlanInputForm() {
                                     <FormControl>
                                         <Input placeholder="Beginner / Intermediate / Advanced" {...field} />
                                     </FormControl>
-                                    <FormDescription>
-                                        General training experience or fitness level.
-                                    </FormDescription>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            General training experience or fitness level.
+                                        </FormDescription>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -162,9 +174,11 @@ export function PlanInputForm() {
                                     <FormControl>
                                         <Input placeholder="Singapore" {...field} />
                                     </FormControl>
-                                    <FormDescription>
-                                        Where will you be training and competing in.
-                                    </FormDescription>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            Where will you be training and competing in.
+                                        </FormDescription>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -193,7 +207,7 @@ export function PlanInputForm() {
                             name="goal_date"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Goal Race Date</FormLabel>
+                                    <FormLabel>Goal Date</FormLabel>
                                     <FormControl>
                                         <Input type="date" {...field} />
                                     </FormControl>

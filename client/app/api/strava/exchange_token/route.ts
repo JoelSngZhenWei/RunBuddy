@@ -19,18 +19,39 @@ export async function GET(req: NextRequest) {
       }),
     })
 
-    const data = await resp.json()
+    const tokenData = await resp.json()
     if (!resp.ok) {
-      return NextResponse.json({ error: data?.message || "Token exchange failed" }, { status: resp.status })
+      return NextResponse.json({ error: tokenData?.message || "Token exchange failed" }, { status: resp.status })
     }
 
-    // set cookie (overwrites if exists)
-    cookies().set("strava_access_token", data.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 1 week
+    (await
+      // set cookie (overwrites if exists)
+      cookies()).set("strava_access_token", tokenData.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+      })
+
+    // fetch athlete details (minimal)
+    const athleteResp = await fetch("https://www.strava.com/api/v3/athlete", {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
     })
+    if (athleteResp.ok) {
+      const athlete = await athleteResp.json()
+        ; (await cookies()).set("id", athlete.id || "", {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7,
+        })
+        ; (await cookies()).set("strava_athlete_username", athlete.username || "", {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7,
+        })
+        ; (await cookies()).set("strava_athlete_profile_medium", athlete.profile_medium || "", {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7,
+        })
+    }
 
     // redirect back to your app
     const redirectTo = new URL("/", req.url) // change to /dashboard if you want

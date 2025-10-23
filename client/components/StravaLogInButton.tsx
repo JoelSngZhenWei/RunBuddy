@@ -12,7 +12,7 @@ export default function StravaLogInButton() {
       `&response_type=code` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&approval_prompt=force` +
-      `&scope=read,activity:read_all`
+      `&scope=read_all,activity:read_all,profile:read_all`
     window.location.href = url
   }
 

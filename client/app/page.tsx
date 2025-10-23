@@ -6,7 +6,7 @@ export default function Home() {
   const token = cookies().get("strava_access_token")?.value
 
   return (
-    <main className="space-y-4 p-6">
+    <div className="space-y-4 p-6">
       {!token ? (
         <StravaLogInButton />
       ) : (
@@ -15,6 +15,6 @@ export default function Home() {
           <ActivitiesList />
         </>
       )}
-    </main>
+    </div>
   )
 }

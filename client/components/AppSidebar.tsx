@@ -2,6 +2,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupConte
 import { Code, Home, Sparkles } from "lucide-react"
 import { FaRunning } from "react-icons/fa"
 import { AppSidebarUser } from "./AppSidebarUser"
+import { AppSidebarTitle } from "./AppSidebarTitle"
 
 const navigation = [
     {
@@ -11,7 +12,7 @@ const navigation = [
     },
     {
         name: "Generate Plan",
-        url: "/buddy",
+        url: "/plan",
         icon: Sparkles,
     },
     {
@@ -24,26 +25,14 @@ const navigation = [
 const user = {
     username: "joel_sng",
     id: 70856688,
-    avatar: "https://dgalywyr863hv.cloudfront.net/pictures/athletes/70856688/33152082/1/medium.jpg", // placeholder avatar
+    avatar: "https://dgalywyr863hv.cloudfront.net/pictures/athletes/70856688/33152082/1/medium.jpg",
 }
 
 export function AppSidebar() {
     return (
         <Sidebar collapsible="icon">
-            <SidebarHeader className="">
-                <SidebarMenuButton
-                    size="lg"
-                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                    <div className="bg-strava text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                        <FaRunning className="size-4" />
-                    </div>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-medium">Run Buddy</span>
-                        <span className="truncate text-xs">An IS469 Project</span>
-                    </div>
-                </SidebarMenuButton>
-            </SidebarHeader>
+            <AppSidebarTitle />
+
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupContent>

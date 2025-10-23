@@ -1,14 +1,18 @@
 // components/MiniRouteMap.tsx
 "use client"
 
+import { DumbbellIcon } from "lucide-react"
+import { FaBiking, FaHeartbeat, FaHiking, FaRunning, FaTableTennis, FaWalking } from "react-icons/fa"
+import { IconType } from "react-icons/lib"
+
 type MiniRouteMapProps = {
   polyline: string
   width?: number
   height?: number
   padding?: number
+  sport_type?: string
 }
 
-/** Minimal Google-style polyline decoder (no deps) */
 function decodePolyline(str: string): [number, number][] {
   let index = 0, lat = 0, lng = 0
   const coordinates: [number, number][] = []
@@ -38,15 +42,59 @@ function decodePolyline(str: string): [number, number][] {
   return coordinates
 }
 
+const sportIconMap: Record<string, IconType> = {
+  Run: FaRunning,
+  TrailRun: FaRunning,
+  VirtualRun: FaRunning,
+  Ride: FaBiking,
+  VirtualRide: FaBiking,
+  Walk: FaWalking,
+  Hike: FaHiking,
+  WeightTraining: DumbbellIcon,
+  Workout: FaHeartbeat,
+  Pickleball: FaTableTennis
+}
+
+function getIconForSport(sportType?: string): IconType {
+  if (!sportType) return FaRunning
+  const key = sportType.replace(/\s+/g, "")
+  return sportIconMap[key] ?? FaRunning
+}
+
 export default function MiniRouteMap({
   polyline,
   width = 100,
   height = 100,
   padding = 5,
+  sport_type
 }: MiniRouteMapProps) {
-  if (!polyline) return null
+  const Icon = getIconForSport(sport_type)
+
+  if (!polyline) {
+    return (
+      <div
+        style={{ width, height }}
+        className="flex items-center justify-center text-primary"
+        aria-hidden="true"
+      >
+        <Icon className="h-3/4 w-3/4" />
+      </div>
+    )
+  }
+
   const pts = decodePolyline(polyline)
-  if (pts.length < 2) return null
+  if (pts.length < 2) {
+    return (
+      <div
+        style={{ width, height }}
+        className="flex items-center justify-center text-muted-foreground/60"
+        aria-hidden="true"
+      >
+        <Icon className="h-3/4 w-3/4" />
+      </div>
+    )
+  }
+
 
   // Bounds
   let minLat = Infinity, minLng = Infinity, maxLat = -Infinity, maxLng = -Infinity
@@ -80,7 +128,7 @@ export default function MiniRouteMap({
     .join(" ")
 
   return (
-    <svg width={width} height={height} className="text-strava">
+    <svg width={width} height={height} className="text-primary">
       {/* Path */}
       <path d={d} fill="none" stroke="currentColor" strokeWidth={2} />
     </svg>

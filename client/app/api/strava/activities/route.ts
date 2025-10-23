@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const page = searchParams.get("page") ?? "1";
-  const per_page = searchParams.get("per_page") ?? "30"; // up to 200
+  const per_page = searchParams.get("per_page") ?? "200"; // up to 200
 
   const upstream = await fetch(
     `https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${per_page}`,

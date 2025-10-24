@@ -4,9 +4,9 @@ import { ScrollArea } from "./ui/scroll-area";
 export default function PlanOutputDetails() {
     return (
         <CardContent className="space-y-6 text-sm">
-            <ScrollArea className="h-[85vh] pb-2">
+            <ScrollArea className="h-[85vh] pb-10">
                 {/* Training Plan Section */}
-                <div>
+                <div className="">
                     <h3 className="font-semibold text-base mb-1">5-Week Half Marathon Plan</h3>
                     <p className="text-muted-foreground mb-2">
                         5 training days per week • ~30 km total • Intermediate level

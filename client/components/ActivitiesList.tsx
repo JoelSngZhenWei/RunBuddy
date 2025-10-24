@@ -15,7 +15,9 @@ export default function ActivitiesList() {
     try {
       const res = await fetch("/api/strava/activities")
       const data = await res.json()
-      setActivities(data)
+      console.log("Printing data")
+      console.log(data)
+      setActivities(data.data)
     } catch (err) {
       console.error("Failed to fetch activities", err)
     } finally {

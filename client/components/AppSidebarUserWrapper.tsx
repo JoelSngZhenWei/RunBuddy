@@ -4,6 +4,7 @@ import * as React from "react"
 import { AppSidebarUser } from "./AppSidebarUser"
 import StravaLogInButton from "@/components/StravaLogInButton"
 import { Skeleton } from "./ui/skeleton"
+import SimulateLogInButton from "./SimulateLogInButton"
 
 export default function AppSidebarUserWrapper() {
     const [user, setUser] = React.useState<{
@@ -50,8 +51,12 @@ export default function AppSidebarUserWrapper() {
     // no user found → show login button
     if (!user) {
         return (
-            <div className="p-3">
+            // <div className="p-3">
+            //     <StravaLogInButton />
+            // </div>
+            <div className="p-3 grid grid-rows-2 gap-2">
                 <StravaLogInButton />
+                <SimulateLogInButton />
             </div>
         )
     }

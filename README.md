@@ -35,7 +35,7 @@ runbuddy/
 
 ### 1️⃣ Clone the repository
 ```bash
-git clone https://github.com/<your-username>/runbuddy.git
+git clone https://github.com/JoelSngZhenWei/RunBuddy.git
 cd runbuddy
 ````
 
@@ -65,20 +65,11 @@ http://localhost:3000
 Create a `.env.local` file inside the `client/` folder:
 
 ```bash
-NEXT_PUBLIC_STRAVA_CLIENT_ID=your_strava_client_id
-NEXT_PUBLIC_STRAVA_REDIRECT_URI=http://localhost:3000/api/auth/callback
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-```
-
-Backend `.env` (if applicable):
-
-```bash
 NEXT_PUBLIC_STRAVA_CLIENT_ID=178531
 NEXT_PUBLIC_STRAVA_CLIENT_SECRET=139866d736bea7d825cdeb3401cf5bc96063fe04
 STRAVA_CLIENT_ID=178531
 STRAVA_CLIENT_SECRET=139866d736bea7d825cdeb3401cf5bc96063fe04
 ```
-
 ---
 
 ## 🧠 Roadmap

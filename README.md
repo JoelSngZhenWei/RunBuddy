@@ -23,6 +23,8 @@ Insert
 
 runbuddy/
 ├── client/        # Next.js frontend
+├── model/         # Model files
+├── server/        # This is empty right now
 └── README.md
 
 ````

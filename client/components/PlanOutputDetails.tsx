@@ -1,13 +1,78 @@
+"use client"
+
 import { CardContent } from "./ui/card";
 import { ScrollArea } from "./ui/scroll-area";
+import { usePlan } from "@/contexts/PlanContext";
+import ReactMarkdown from 'react-markdown';
 
 export default function PlanOutputDetails() {
+    const { generatedPlan, isGenerating } = usePlan()
+
+    // If generating, show loading state
+    if (isGenerating) {
+        return (
+            <CardContent className="space-y-6 text-sm">
+                <ScrollArea className="h-[85vh] pb-10">
+                    <div className="flex flex-col items-center justify-center h-full py-20">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                        <p className="text-muted-foreground">Generating your personalized training plan...</p>
+                        <p className="text-xs text-muted-foreground mt-2">This may take 10-20 seconds</p>
+                    </div>
+                </ScrollArea>
+            </CardContent>
+        )
+    }
+
+    // If plan exists, show it
+    if (generatedPlan?.plan) {
+        return (
+            <CardContent className="space-y-6 text-sm">
+                <ScrollArea className="h-[85vh] pb-10">
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown
+                            components={{
+                                h1: ({node, ...props}) => <h1 className="font-bold text-xl mb-3 mt-6" {...props} />,
+                                h2: ({node, ...props}) => <h2 className="font-semibold text-lg mb-2 mt-5" {...props} />,
+                                h3: ({node, ...props}) => <h3 className="font-semibold text-base mb-2 mt-4" {...props} />,
+                                h4: ({node, ...props}) => <h4 className="font-medium text-sm mb-1 mt-3" {...props} />,
+                                p: ({node, ...props}) => <p className="text-muted-foreground mb-3" {...props} />,
+                                ul: ({node, ...props}) => <ul className="list-disc list-inside text-muted-foreground space-y-1 mb-4" {...props} />,
+                                ol: ({node, ...props}) => <ol className="list-decimal list-inside text-muted-foreground space-y-1 mb-4" {...props} />,
+                                li: ({node, ...props}) => <li className="text-muted-foreground" {...props} />,
+                                strong: ({node, ...props}) => <strong className="font-semibold text-foreground" {...props} />,
+                                em: ({node, ...props}) => <em className="italic" {...props} />,
+                            }}
+                        >
+                            {generatedPlan.plan}
+                        </ReactMarkdown>
+                        
+                        {generatedPlan.metadata?.calendarIntegration && (
+                            <div className="mt-6 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                                <p className="text-sm text-green-800 dark:text-green-200">
+                                    ✓ This plan has been customized based on your Google Calendar schedule
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+            </CardContent>
+        )
+    }
+
+    // Default: Show example/placeholder
     return (
         <CardContent className="space-y-6 text-sm">
             <ScrollArea className="h-[85vh] pb-10">
-                {/* Training Plan Section */}
-                <div className="">
-                    <h3 className="font-semibold text-base mb-1">5-Week Half Marathon Plan</h3>
+                <div className="flex flex-col items-center justify-center h-full py-20 text-center">
+                    <p className="text-muted-foreground mb-4">No training plan generated yet.</p>
+                    <p className="text-xs text-muted-foreground max-w-md">
+                        Fill in the form on the left and click "Generate Plan" to create your personalized training schedule.
+                    </p>
+                </div>
+                
+                {/* Example plan below */}
+                <div className="opacity-30 mt-8">
+                    <h3 className="font-semibold text-base mb-1">5-Week Half Marathon Plan (Example)</h3>
                     <p className="text-muted-foreground mb-2">
                         5 training days per week • ~30 km total • Intermediate level
                     </p>

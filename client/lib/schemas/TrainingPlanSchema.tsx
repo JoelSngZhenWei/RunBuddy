@@ -28,4 +28,7 @@ export const trainingPlanSchema = z.object({
 
     start_date: z.string().date("Invalid start date"),
     goal_date: z.string().date("Invalid goal date"),
+    
+    use_calendar: z.boolean().default(false).optional(),
+    calendar_events_summary: z.string().optional(),
 })

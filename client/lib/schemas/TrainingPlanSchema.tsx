@@ -26,6 +26,10 @@ export const trainingPlanSchema = z.object({
         message: "Should be a valid country name"
     }),
 
-    start_date: z.string().date("Invalid start date"),
-    goal_date: z.string().date("Invalid goal date"),
+    injury: z
+    .string()
+    .optional(),
+
+    start_date: z.string().min(1, "Start date is required"),
+    goal_date: z.string().min(1, "Goal date is required"),
 })

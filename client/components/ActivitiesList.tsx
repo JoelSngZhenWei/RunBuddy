@@ -5,6 +5,9 @@ import ActivityCard from "@/components/ActivityCard"
 import { Spinner } from "./ui/spinner"
 import ActivityListControl from "./ActivityListControl"
 import { ScrollArea } from "./ui/scroll-area"
+import ActivityCardSkeleton from "./ActivityCardSkeleton"
+import { toast } from "sonner"
+import { FaRunning } from "react-icons/fa"
 
 export default function ActivitiesList() {
   const [activities, setActivities] = useState<any[]>([])
@@ -15,12 +18,14 @@ export default function ActivitiesList() {
     try {
       const res = await fetch("/api/strava/activities")
       const data = await res.json()
-      console.log("Printing data")
-      console.log(data)
       setActivities(data.data)
     } catch (err) {
       console.error("Failed to fetch activities", err)
     } finally {
+      toast("Activities loaded", {
+        duration: 1000,
+        icon: <FaRunning className="h-5 w-5 text-strava" />
+      })
       setLoading(false)
     }
   }, [])
@@ -52,24 +57,6 @@ export default function ActivitiesList() {
     fetchActivities()
   }, [fetchActivities])
 
-  if (loading)
-    return (
-      <>
-        <ActivityListControl
-          sports={uniqueSports}
-          onFilterChange={(next) => setFilters((prev) => ({ ...prev, ...next }))}
-          onRefresh={fetchActivities}
-          disabled={loading}
-        />
-        <p className="flex items-center gap-2">
-          <Spinner />
-          Loading activities...
-        </p>
-      </>
-    )
-
-  if (!activities.length) return <p>No activities found.</p>
-
   return (
     <>
       <ActivityListControl
@@ -77,28 +64,42 @@ export default function ActivitiesList() {
         onFilterChange={(next) => setFilters((prev) => ({ ...prev, ...next }))}
         onRefresh={fetchActivities}
       />
+      <ScrollArea className="h-[86.5vh] w-full rounded-md border bg-card">
+        <div className="grid gap-4">
+          {filtered.length === 0 ? (
+            // Empty (or initial) state show two skeletons
+            // Populate with an appropriate empty message if needed
+            <div className="flex flex-col gap-4">
+              <ActivityCardSkeleton />
+              <ActivityCardSkeleton />
+            </div>
+          ) : loading ? (
+            // Loading while we have filters/data context
+            <div className="flex flex-col gap-4">
+              <ActivityCardSkeleton />
+              <ActivityCardSkeleton />
+            </div>
+          ) : (
+            // Loaded list
+            <div className="flex flex-col gap-4">
+              {filtered.map((a) => (
+                <ActivityCard
+                  key={a.id}
+                  start_date={a.start_date}
+                  name={a.name}
+                  sport_type={a.sport_type}
+                  heartrate={a.average_heartrate}
+                  distance={a.distance}
+                  moving_time={a.moving_time}
+                  summary_polyline={a.map?.summary_polyline ?? ""}
+                  average_speed={a.average_speed}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
 
-      {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No activities match your filters.</p>
-      ) : (
-        <ScrollArea className="h-[89.2vh] w-full rounded-md border p-3 bg-card">
-          <div className="grid gap-4 ">
-            {filtered.map((a) => (
-              <ActivityCard
-                key={a.id}
-                start_date={a.start_date}
-                name={a.name}
-                sport_type={a.sport_type}
-                heartrate={a.average_heartrate}
-                distance={a.distance}
-                moving_time={a.moving_time}
-                summary_polyline={a.map?.summary_polyline}
-                average_speed={a.average_speed}
-              />
-            ))}
-          </div>
-        </ScrollArea>
-      )}
     </>
   )
 }

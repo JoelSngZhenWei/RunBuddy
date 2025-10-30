@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { MultiSelectSports } from "./MultiSelectSports"
-import { Filter } from "lucide-react"
+import { Filter, Recycle } from "lucide-react"
+import { toast } from "sonner"
 // import { MultiSelectFilters } from "./MultiSelectFilters" // (unused)
 
 type Props = {
@@ -51,7 +52,7 @@ export default function ActivityListControl({ sports, onFilterChange, onRefresh,
   function handleReset() {
     setSelectedSports([])
     setActivityOptions({ hasRouteMap: false, hasHeartRate: false, hasDistance: false })
-    emitFilters() // clears all in parent (sets to undefined)
+    emitFilters()
   }
 
   return (

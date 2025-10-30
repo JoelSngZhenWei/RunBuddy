@@ -40,8 +40,8 @@ export default function ActivityCard({
     const date = new Date(start_date).toLocaleDateString()
 
     return (
-        <Card className="w-full bg-background ">
-            <CardHeader>
+        <Card className="w-full bg-background h-[28vh] gap-0">
+            <CardHeader className="">
                 <CardTitle className="text-lg font-semibold">{name}</CardTitle>
                 {formattedSportType && (
                     <p className="text-sm italic text-muted-foreground">

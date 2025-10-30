@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Envs & tooling
+.venv/
+.env
+.env.*
+
+# VCS
+.git/
+.gitignore
+
+# OS junk
+.DS_Store
+
+# Node/Next stuff (just in case)
+node_modules/
+.next/
+dist/
+out/
+coverage/

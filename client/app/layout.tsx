@@ -5,6 +5,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { cookies } from "next/headers";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Run Buddy",
@@ -33,6 +34,7 @@ export default async function RootLayout({
             <SidebarInset>
               <AppHeader />
               {children}
+              <Toaster position="top-center" />
             </SidebarInset>
           </SidebarProvider>
         </ThemeProvider>

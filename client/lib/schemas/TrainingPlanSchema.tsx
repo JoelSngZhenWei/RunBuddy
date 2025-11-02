@@ -1,4 +1,8 @@
 import { z } from "zod"
+import { activitySummarySchema } from "./WearableDataSchema"
+
+export const activityLevelSchema = z.enum(["sedentary", "moderate", "high"])
+export type ActivityLevel = z.infer<typeof activityLevelSchema>
 
 export const trainingPlanSchema = z.object({
     goal_event: z.string().min(3, {
@@ -31,4 +35,9 @@ export const trainingPlanSchema = z.object({
     
     use_calendar: z.boolean().default(false).optional(),
     calendar_events_summary: z.string().optional(),
+    
+    use_wearable: z.boolean().default(false).optional(),
+    wearable_data: activitySummarySchema.optional(),
+    activity_level: activityLevelSchema.optional(),
+
 })

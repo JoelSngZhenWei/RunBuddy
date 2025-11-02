@@ -46,6 +46,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
             goal_date: "",
             use_calendar: false,
             calendar_events_summary: "",
+            address: "",
         },
     })
 
@@ -131,22 +132,35 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
             console.log(values.calendar_events_summary)
         }
         
-        // TODO: Replace this with your actual plan generation logic
-        // Example: Call your LLM API, generate plan, display results
-        
-        // For now, show an alert with the data
-        const message = values.use_calendar 
-            ? `Plan generation submitted!\n\nGoal: ${values.goal_event}\nDates: ${values.start_date} to ${values.goal_date}\nCalendar Integration: ✓ Enabled\n\nCheck browser console (F12) to see full data including calendar events.`
-            : `Plan generation submitted!\n\nGoal: ${values.goal_event}\nDates: ${values.start_date} to ${values.goal_date}\nCalendar Integration: Not enabled\n\nCheck browser console (F12) to see full data.`
-        
-        // Call the API to generate the plan
         setIsGenerating(true)
         try {
+            // If address is provided, get location coordinates first
+            let locationData = null;
+            if (values.address) {
+                const response = await fetch('/api/suggest-routes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        address: values.address,
+                        distance: values.current_weekly_km / values.days_per_week // average distance per run
+                    }),
+                });
+                
+                if (response.ok) {
+                    locationData = await response.json();
+                    console.log("✅ Route suggestions:", locationData);
+                }
+            }
+            
+            // Call the API to generate the plan
             const response = await fetch('/api/generate-plan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(values),
-            })
+                body: JSON.stringify({
+                    ...values,
+                    routeSuggestions: locationData // Include route suggestions in the plan generation
+                }),
+            });
             
             if (!response.ok) {
                 throw new Error('Plan generation failed')
@@ -209,6 +223,28 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
                                     {showDescriptions && (
                                         <FormDescription>
                                             Describe your performance target or goal.
+                                        </FormDescription>
+                                    )}
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    {/* form row1.5 - Address */}
+                    <div className="grid grid-cols-1 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Starting/Ending Location (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="123 Orchard Road, Singapore" {...field} />
+                                    </FormControl>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            Enter your preferred starting and ending point for your runs. We'll suggest routes based on this location.
                                         </FormDescription>
                                     )}
                                     <FormMessage />

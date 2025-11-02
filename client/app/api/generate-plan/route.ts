@@ -94,6 +94,14 @@ function calculateWeeks(startDate: string, endDate: string): number {
 
 // Helper: Build LLM prompt
 function buildPromptForLLM(formData: any): string {
+  const hasRoutes = formData.routeSuggestions && 
+                   formData.routeSuggestions.routes && 
+                   formData.routeSuggestions.routes.length > 0;
+                   
+  const baseDistance = hasRoutes ? 
+    formData.routeSuggestions.routes[0].distance.toFixed(2) : 
+    (formData.current_weekly_km / formData.days_per_week).toFixed(2);
+
   return `
 You are an expert running coach. Create a personalized training plan.
 
@@ -105,6 +113,36 @@ ATHLETE DETAILS:
 - Training Days per Week: ${formData.days_per_week}
 - Location: ${formData.country}
 - Training Period: ${formData.start_date} to ${formData.goal_date}
+${formData.address ? `- Starting/Ending Location: ${formData.address}` : ''}
+
+${hasRoutes ? `
+🗺️ SUGGESTED RUNNING ROUTE:
+I have identified a running route from the specified location:
+
+ROUTE DETAILS:
+- Starting Point: ${formData.address}
+- Distance: ${formData.routeSuggestions.routes[0].distance.toFixed(2)} km
+- Type: Out-and-back route
+${formData.routeSuggestions.routes[0].summary ? `- Estimated Duration: ${Math.round(formData.routeSuggestions.routes[0].summary.total_time / 60)} minutes` : ''}
+
+STEP-BY-STEP DIRECTIONS:
+${formData.routeSuggestions.routes[0].directions.map((step: string, index: number) => 
+  `${index + 1}. ${step}`
+).join('\n')}
+
+When creating the training plan, incorporate this route as follows:
+1. Include these exact directions in each workout that uses this route
+2. For longer runs, specify which sections to repeat or extend
+3. For shorter runs, indicate the turning point in the directions
+4. Note any landmarks or significant points for safety and navigation
+5. Consider the route's characteristics when planning workout intensity
+
+Remember to advise the runner to:
+- Study the route before the first run
+- Run the route in daylight first to familiarize
+- Save the directions on their phone
+- Be aware of their surroundings while running
+` : ''}
 
 ${formData.use_calendar && formData.calendar_events_summary ? `
 ⚠️ IMPORTANT - CALENDAR CONSTRAINTS:
@@ -120,12 +158,37 @@ Requirements:
 4. Acknowledge the schedule constraints in your recommendations
 ` : ''}
 
-Please provide:
-1. Week-by-week training schedule with exact timing for workouts
-2. Specific workouts with distances and paces
-3. Rest and recovery days
+Please provide a detailed training plan with the following format:
+
+WEEKLY SCHEDULE FORMAT:
+Week [Number] ([Date Range]):
+[Day]: [Workout Type]
+- Distance: [X] km
+- Target Pace: [X:XX/km]
+- Route Instructions:
+  * Start: ${formData.address}
+  * [Include the step-by-step directions provided above]
+  * For longer runs: [Specify which sections to repeat]
+  * For shorter runs: [Specify where to turn back]
+- Workout Details: [Include specific intervals, tempo sections, etc.]
+- Recovery: [Specify recovery times between intervals if applicable]
+
+Please include:
+1. Detailed weekly schedules as per the format above
+2. Each running session must have:
+   - Clear route directions copied from the suggested route
+   - Specific modifications for different distances
+   - Key landmarks or checkpoints
+3. Rest and recovery days clearly marked
 4. Race day strategy
-5. Safety tips for ${formData.country}
+5. Safety tips for running in ${formData.country}
+
+For route modifications:
+- Shorter runs (< ${baseDistance} km): Specify exact turning point
+- Longer runs (> ${baseDistance} km): Detail how many times to repeat specific sections
+- Include clear markers or landmarks for turn-around points
+
+Important: Every running session must include the complete step-by-step directions with any necessary modifications for that specific workout.
 `.trim()
 }
 

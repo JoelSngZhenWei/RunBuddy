@@ -31,4 +31,7 @@ export const trainingPlanSchema = z.object({
     
     use_calendar: z.boolean().default(false).optional(),
     calendar_events_summary: z.string().optional(),
+    address: z.string().optional().refine((val) => !val || val.length >= 5, {
+        message: "Address should be at least 5 characters if provided",
+    }),
 })

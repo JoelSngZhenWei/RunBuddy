@@ -166,10 +166,20 @@ Week [Number] ([Date Range]):
 - Distance: [X] km
 - Target Pace: [X:XX/km]
 - Route Instructions:
-  * Start: ${formData.address}
-  * [Include the step-by-step directions provided above]
-  * For longer runs: [Specify which sections to repeat]
-  * For shorter runs: [Specify where to turn back]
+  ${formData.routeSuggestions?.presetRoutes ? 
+    `* Suggested Route: ${formData.routeSuggestions.presetRoutes[0].name}
+     * Location: ${formData.routeSuggestions.presetRoutes[0].location}
+     * Distance: ${formData.routeSuggestions.presetRoutes[0].distance} km
+     * Surface Type: ${formData.routeSuggestions.presetRoutes[0].surfaceType}
+     * Key Features: ${formData.routeSuggestions.presetRoutes[0].highlights.join(', ')}
+     * For longer runs: Run multiple segments or extend the route as needed
+     * For shorter runs: Run a partial segment and turn back` 
+    : formData.address && formData.routeSuggestions?.routes ? 
+    `* Start: ${formData.address}
+     * [Include the step-by-step directions provided above]
+     * For longer runs: [Specify which sections to repeat]
+     * For shorter runs: [Specify where to turn back]` 
+    : '* No specific route suggested. Choose any convenient route.'}
 - Workout Details: [Include specific intervals, tempo sections, etc.]
 - Recovery: [Specify recovery times between intervals if applicable]
 

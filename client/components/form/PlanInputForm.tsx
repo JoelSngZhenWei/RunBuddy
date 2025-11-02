@@ -4,6 +4,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { RouteSuggestions } from "@/lib/types"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -134,39 +135,38 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
         
         setIsGenerating(true)
         try {
-            // If address is provided, get location coordinates first
-            let locationData = null;
-            if (values.address) {
-                const response = await fetch('/api/suggest-routes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        address: values.address,
-                        distance: values.current_weekly_km / values.days_per_week // average distance per run
-                    }),
-                });
-                
-                if (response.ok) {
-                    locationData = await response.json();
-                    console.log("✅ Route suggestions:", locationData);
-                }
+            // Get route suggestions - either preset routes or custom routes based on address
+            let routeSuggestions: RouteSuggestions | null = null;
+            const routeResponse = await fetch('/api/suggest-routes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    address: values.address || '',
+                    distance: values.current_weekly_km / values.days_per_week, // average distance per run
+                    country: values.country
+                }),
+            });
+            
+            if (routeResponse.ok) {
+                routeSuggestions = await routeResponse.json();
+                console.log("✅ Route suggestions:", routeSuggestions);
             }
             
             // Call the API to generate the plan
-            const response = await fetch('/api/generate-plan', {
+            const planResponse = await fetch('/api/generate-plan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...values,
-                    routeSuggestions: locationData // Include route suggestions in the plan generation
+                    routeSuggestions: routeSuggestions // Include route suggestions in the plan generation
                 }),
             });
             
-            if (!response.ok) {
+            if (!planResponse.ok) {
                 throw new Error('Plan generation failed')
             }
             
-            const result = await response.json()
+            const result = await planResponse.json();
             console.log("✅ Generated Plan:", result)
             
             // Store the plan in context so PlanOutput can display it
@@ -244,7 +244,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
                                     </FormControl>
                                     {showDescriptions && (
                                         <FormDescription>
-                                            Enter your preferred starting and ending point for your runs. We'll suggest routes based on this location.
+                                            Enter your preferred starting and ending point for your runs. If left empty, we&apos;ll suggest running routes in your country.
                                         </FormDescription>
                                     )}
                                     <FormMessage />

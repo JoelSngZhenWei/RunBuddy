@@ -1,13 +1,42 @@
 import { searchAddress, suggestRoutes } from "@/lib/onemap-utils";
 import { NextRequest, NextResponse } from "next/server";
+import { singaporeRoutes } from "@/app/fixtures/preset-routes";
 
 export async function POST(req: NextRequest) {
     try {
-        const { address, distance } = await req.json();
+        const { address, distance, country } = await req.json();
 
-        if (!address || !distance) {
+        // If no address is provided and country is Singapore, return preset routes filtered by distance
+        if (!address && country?.toLowerCase() === 'singapore') {
+            const filteredRoutes = singaporeRoutes
+                .filter(route => Math.abs(route.distance - distance) <= 5) // Routes within 5km of target distance
+                .sort((a, b) => Math.abs(a.distance - distance) - Math.abs(b.distance - distance))
+                .slice(0, 3); // Return top 3 closest matches
+
+            if (filteredRoutes.length === 0) {
+                // If no routes match the distance criteria, return all routes sorted by distance
+                const allRoutesSorted = [...singaporeRoutes]
+                    .sort((a, b) => Math.abs(a.distance - distance) - Math.abs(b.distance - distance))
+                    .slice(0, 3);
+
+                return NextResponse.json({
+                    presetRoutes: allRoutesSorted
+                });
+            }
+
+            return NextResponse.json({
+                presetRoutes: filteredRoutes
+            });
+        }
+
+        // If no address is provided and country is not Singapore, return empty response
+        if (!address) {
+            return NextResponse.json({});
+        }
+
+        if (!distance) {
             return NextResponse.json(
-                { error: "Address and distance are required" },
+                { error: "Distance is required" },
                 { status: 400 }
             );
         }

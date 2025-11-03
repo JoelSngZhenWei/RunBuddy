@@ -4,6 +4,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { RouteSuggestions } from "@/lib/types"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -51,6 +52,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
             use_wearable: false,
             wearable_data: activitySummaries.sedentary,
             activity_level: "sedentary" as const,
+            address: "",
         },
     })
 
@@ -150,19 +152,41 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
             : `Plan generation submitted!\n\nGoal: ${values.goal_event}\nDates: ${values.start_date} to ${values.goal_date}\nCalendar Integration: Not enabled\n\nCheck browser console (F12) to see full data.`
 
         // Call the API to generate the plan
+
         setIsGenerating(true)
         try {
-            const response = await fetch('/api/generate-plan', {
+            // Get route suggestions - either preset routes or custom routes based on address
+            let routeSuggestions: RouteSuggestions | null = null;
+            const routeResponse = await fetch('/api/suggest-routes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(values),
-            })
+                body: JSON.stringify({
+                    address: values.address || '',
+                    distance: values.current_weekly_km / values.days_per_week, // average distance per run
+                    country: values.country
+                }),
+            });
 
-            if (!response.ok) {
+            if (routeResponse.ok) {
+                routeSuggestions = await routeResponse.json();
+                console.log("✅ Route suggestions:", routeSuggestions);
+            }
+
+            // Call the API to generate the plan
+            const planResponse = await fetch('/api/generate-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...values,
+                    routeSuggestions: routeSuggestions // Include route suggestions in the plan generation
+                }),
+            });
+
+            if (!planResponse.ok) {
                 throw new Error('Plan generation failed')
             }
 
-            const result = await response.json()
+            const result = await planResponse.json();
             console.log("✅ Generated Plan:", result)
 
             // Store the plan in context so PlanOutput can display it
@@ -438,6 +462,156 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
                                 </>
                             )}
                         </div>
+                    </div>
+
+                    {/* form row1.5 - Address */}
+                    <div className="grid grid-cols-1 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Starting/Ending Location (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="123 Orchard Road, Singapore" {...field} />
+                                    </FormControl>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            Enter your preferred starting and ending point for your runs. If left empty, we&apos;ll suggest running routes in your country.
+                                        </FormDescription>
+                                    )}
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    {/* form row2 */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Days per Week */}
+                        <FormField
+                            control={form.control}
+                            name="days_per_week"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Days per Week</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={7}
+                                            placeholder="4"
+                                            {...field}
+                                            onChange={(e) => field.onChange(Number(e.target.value))}
+                                        />
+                                    </FormControl>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            How many days you can train per week.
+                                        </FormDescription>
+                                    )}
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* weekly distance current */}
+                        <FormField
+                            control={form.control}
+                            name="current_weekly_km"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Current Weekly Distance (km)</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="number"
+                                            placeholder="35"
+                                            {...field}
+                                            onChange={(e) => field.onChange(Number(e.target.value))}
+                                        />
+                                    </FormControl>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            Approximate weekly mileage currently.
+                                        </FormDescription>
+                                    )}
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    {/* form row 3 */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="fitness_level"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Fitness Level</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Beginner / Intermediate / Advanced" {...field} />
+                                    </FormControl>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            General training experience or fitness level.
+                                        </FormDescription>
+                                    )}
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        {/* Country */}
+                        <FormField
+                            control={form.control}
+                            name="country"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Country</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Singapore" {...field} />
+                                    </FormControl>
+                                    {showDescriptions && (
+                                        <FormDescription>
+                                            Where will you be training and competing in.
+                                        </FormDescription>
+                                    )}
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    {/* form row 4 */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Dates */}
+                        <FormField
+                            control={form.control}
+                            name="start_date"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Start Date</FormLabel>
+                                    <FormControl>
+                                        <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="goal_date"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Goal Date</FormLabel>
+                                    <FormControl>
+                                        <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
 
                     {/* Wearable Integration Section */}

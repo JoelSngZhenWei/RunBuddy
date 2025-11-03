@@ -40,4 +40,5 @@ export const trainingPlanSchema = z.object({
     wearable_data: activitySummarySchema.optional(),
     activity_level: activityLevelSchema.optional(),
 
+    address: z.string().optional(),
 })

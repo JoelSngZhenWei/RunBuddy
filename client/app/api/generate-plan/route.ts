@@ -15,6 +15,11 @@ export async function POST(req: NextRequest) {
       console.log("\n=== USER CALENDAR DATA ===")
       console.log(formData.calendar_events_summary)
     }
+
+    if (formData.use_wearable && formData.wearable_data) {
+      console.log("\n=== WEARABLE DATA INCLUDED ===")
+      console.log(formData.wearable_data)
+    }
     
     // Build the prompt for OpenAI
     const prompt = buildPromptForLLM(formData)
@@ -69,6 +74,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         generatedAt: new Date().toISOString(),
         calendarIntegration: formData.use_calendar || false,
+        wearableData: formData.wearable_data || false,
         model: 'gpt-4-turbo-preview',
         tokensUsed: openaiData.usage,
       }
@@ -143,6 +149,13 @@ Remember to advise the runner to:
 - Save the directions on their phone
 - Be aware of their surroundings while running
 ` : ''}
+
+ADDITIONAL ATHLETE INFORMATION FROM WEARABLE DEVICE (AVERAGE MONTHLY DATA):
+${formData.use_wearable && formData.wearable_data ? `
+- Activity Level: ${formData.activity_level}
+- Summary of recent activities:
+${JSON.stringify(formData.wearable_data, null, 2)}
+` : 'No wearable data provided.'}
 
 ${formData.use_calendar && formData.calendar_events_summary ? `
 ⚠️ IMPORTANT - CALENDAR CONSTRAINTS:

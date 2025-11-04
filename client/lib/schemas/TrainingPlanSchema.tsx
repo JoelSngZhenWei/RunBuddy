@@ -29,7 +29,10 @@ export const trainingPlanSchema = z.object({
     injury: z
     .string()
     .optional(),
-
-    start_date: z.string().min(1, "Start date is required"),
-    goal_date: z.string().min(1, "Goal date is required"),
+    
+    start_date: z.string().date("Invalid start date"),
+    goal_date: z.string().date("Invalid goal date"),
+    
+    use_calendar: z.boolean().default(false).optional(),
+    calendar_events_summary: z.string().optional(),
 })

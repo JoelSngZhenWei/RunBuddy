@@ -23,6 +23,7 @@ import GoogleLogInButton from "@/components/GoogleLogInButton"
 import GoogleLogoutButton from "@/components/GoogleLogoutButton"
 import { Calendar, CheckCircle2, XCircle } from "lucide-react"
 import { usePlan } from "@/contexts/PlanContext"
+import { toast } from "sonner"
 
 
 type FormValues = z.infer<typeof trainingPlanSchema>

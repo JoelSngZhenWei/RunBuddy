@@ -1,5 +1,5 @@
 import { FaRunning } from "react-icons/fa";
-import { SidebarHeader, SidebarMenuButton } from "./ui/sidebar";
+import { SidebarHeader, SidebarMenuButton } from "../ui/sidebar";
 
 export function AppSidebarTitle() {
     return (

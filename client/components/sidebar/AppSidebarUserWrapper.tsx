@@ -3,8 +3,8 @@
 import * as React from "react"
 import { AppSidebarUser } from "./AppSidebarUser"
 import StravaLogInButton from "@/components/StravaLogInButton"
-import { Skeleton } from "./ui/skeleton"
-import SimulateLogInButton from "./SimulateLogInButton"
+import { Skeleton } from "../ui/skeleton"
+import SimulateLogInButton from "../SimulateLogInButton"
 
 export default function AppSidebarUserWrapper() {
     const [user, setUser] = React.useState<{

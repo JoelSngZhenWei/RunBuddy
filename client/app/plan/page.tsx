@@ -35,7 +35,7 @@ export default function Plan() {
               : "flex-[1] opacity-50 hover:opacity-100"
           )}
         >
-          <PlanOutput />
+          <PlanOutput focus={focus}/>
         </div>
       </div>
     </PlanProvider>

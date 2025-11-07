@@ -1,5 +1,5 @@
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator } from "@/components/ui/sidebar"
-import { Code, Home, Sparkles } from "lucide-react"
+import { Code, Home, Sparkles, Wrench } from "lucide-react"
 import { AppSidebarTitle } from "./AppSidebarTitle"
 import AppSidebarUserWrapper from "./AppSidebarUserWrapper"
 
@@ -15,10 +15,16 @@ const navigation = [
         icon: Sparkles,
     },
     {
+        name: "Test",
+        url: "/test",
+        icon: Wrench,
+    },
+    {
         name: "Code",
         url: "https://github.com/JoelSngZhenWei/RunBuddy",
         icon: Code,
     },
+
 ]
 
 const user = {

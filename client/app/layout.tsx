@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+
 import { AppHeader } from "@/components/AppHeader";
 import { cookies } from "next/headers";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { AppSidebar } from "@/components/sidebar/AppSidebar";
 
 export const metadata: Metadata = {
   title: "Run Buddy",

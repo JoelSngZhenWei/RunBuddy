@@ -18,15 +18,57 @@ export default function ActivitiesList() {
     setLoading(true)
     try {
       const res = await fetch("/api/strava/activities")
+      
+      // Check if response is ok
+      if (!res.ok) {
+        throw new Error(`Failed to fetch activities: ${res.status} ${res.statusText}`)
+      }
+      
+      // Check if response is JSON
+      const contentType = res.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text()
+        console.error("Received non-JSON response:", text.substring(0, 200))
+        throw new Error("Server returned non-JSON response")
+      }
+      
       const data = await res.json()
-      setActivities(data.data)
+      
+      // Handle error in JSON response
+      if (data.error) {
+        console.error("API error:", data.error)
+        // Still use data if available (degraded mode)
+        if (data.data && Array.isArray(data.data)) {
+          setActivities(data.data)
+          if (data.degraded) {
+            toast.warning("Using cached activities (Strava API unavailable)", {
+              duration: 3000,
+            })
+          }
+        } else {
+          setActivities([])
+          toast.error("Failed to load activities", {
+            description: data.error,
+            duration: 3000,
+          })
+        }
+      } else {
+        setActivities(data.data || [])
+      }
     } catch (err) {
       console.error("Failed to fetch activities", err)
-    } finally {
-      toast("Activities loaded", {
-        duration: 1000,
-        icon: <FaRunning className="h-5 w-5 text-strava" />
+      setActivities([])
+      toast.error("Failed to load activities", {
+        description: err instanceof Error ? err.message : "Unknown error",
+        duration: 3000,
       })
+    } finally {
+      if (activities.length > 0) {
+        toast("Activities loaded", {
+          duration: 1000,
+          icon: <FaRunning className="h-5 w-5 text-strava" />
+        })
+      }
       setLoading(false)
     }
   }, [])

@@ -21,8 +21,74 @@ export async function POST(req: NextRequest) {
       console.log(formData.wearable_data)
     }
     
-    // Build the prompt for OpenAI
-    const prompt = buildPromptForLLM(formData)
+    // -------------------------
+    // Retrieve RAG Context from Backend
+    // -------------------------
+    let ragContext = ""
+    const backendBaseUrl = process.env.RUNBUDDY_API_BASE_URL || "http://localhost:8000"
+    
+    try {
+      console.log("🔍 Retrieving RAG context from knowledge base...")
+      
+      // Build queries to get relevant context
+      const country = formData.country || "Singapore"
+      const fitnessLevel = formData.fitness_level || "Intermediate"
+      const goalDescription = `${formData.goal_event} ${formData.goal_target || ""}`.trim()
+      
+      // Query 1: Training periodization
+      const contextQueries = [
+        `training plan structure for ${goalDescription} ${fitnessLevel}`,
+        "heart rate zones and pace for running training",
+        "weekly mileage progression and training load management",
+      ]
+      
+      // Add location-specific queries for Singapore
+      if (country.toLowerCase().includes("singapore")) {
+        contextQueries.push("running training in heat and humidity adaptation")
+        contextQueries.push("running routes and locations in Singapore")
+        contextQueries.push("Singapore running guidelines and safety")
+      }
+      
+      // Add injury prevention
+      contextQueries.push("injury prevention and safe running practices")
+      
+      // Retrieve context for each query
+      const allContextParts: string[] = []
+      
+      for (const query of contextQueries) {
+        try {
+          const contextUrl = `${backendBaseUrl}/api/rag/context?query=${encodeURIComponent(query)}`
+          const contextResponse = await fetch(contextUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+          
+          if (contextResponse.ok) {
+            const contextData = await contextResponse.json()
+            if (contextData.context && contextData.context !== "No relevant context found.") {
+              allContextParts.push(contextData.context)
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to retrieve context for query: ${query}`, error)
+        }
+      }
+      
+      if (allContextParts.length > 0) {
+        ragContext = allContextParts.join("\n\n---\n\n")
+        console.log(`✅ Retrieved RAG context from ${allContextParts.length} queries`)
+      } else {
+        console.log("⚠️ No RAG context retrieved - continuing without knowledge base")
+      }
+    } catch (error) {
+      console.warn("⚠️ Error retrieving RAG context:", error)
+      console.log("Continuing without RAG context...")
+    }
+    
+    // Build the prompt for OpenAI (with RAG context if available)
+    const prompt = buildPromptForLLM(formData, ragContext)
     
     // Call OpenAI API
     const openaiApiKey = process.env.OPENAI_API_KEY
@@ -37,6 +103,21 @@ export async function POST(req: NextRequest) {
     
     console.log("🤖 Calling OpenAI API...")
     
+    // Enhanced system message with RAG context awareness
+    const systemMessage = ragContext
+      ? `You are an expert running coach with access to evidence-based training knowledge.
+
+You must:
+- Use the provided training knowledge base to inform your recommendations
+- Follow evidence-based training principles (10% rule, ACWR, periodization)
+- Be conservative about sudden mileage increases
+- Respect injuries and constraints
+- Use the runner's preferred units (km or miles)
+- Align workouts with available days
+- Include pace or effort where possible
+- Consider location-specific factors (heat, humidity, routes)`
+      : `You are an expert running coach with years of experience creating personalized training plans. You understand periodization, injury prevention, and how to adapt plans to real-world schedules.`
+    
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -48,7 +129,7 @@ export async function POST(req: NextRequest) {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert running coach with years of experience creating personalized training plans. You understand periodization, injury prevention, and how to adapt plans to real-world schedules.' 
+            content: systemMessage
           },
           { role: 'user', content: prompt }
         ],
@@ -77,6 +158,7 @@ export async function POST(req: NextRequest) {
         wearableData: formData.wearable_data || false,
         model: 'gpt-4-turbo-preview',
         tokensUsed: openaiData.usage,
+        ragContextUsed: ragContext.length > 0,
       }
     })
     
@@ -98,8 +180,8 @@ function calculateWeeks(startDate: string, endDate: string): number {
   return Math.ceil(diffDays / 7)
 }
 
-// Helper: Build LLM prompt
-function buildPromptForLLM(formData: any): string {
+// Helper: Build LLM prompt with optional RAG context
+function buildPromptForLLM(formData: any, ragContext: string = ""): string {
   const hasRoutes = formData.routeSuggestions && 
                    formData.routeSuggestions.routes && 
                    formData.routeSuggestions.routes.length > 0;
@@ -212,6 +294,21 @@ For route modifications:
 - Include clear markers or landmarks for turn-around points
 
 Important: Every running session must include the complete step-by-step directions with any necessary modifications for that specific workout.
+${ragContext ? `
+
+---
+
+TRAINING KNOWLEDGE BASE (Use this as reference for evidence-based recommendations):
+${ragContext}
+
+IMPORTANT: Use the knowledge base context above to inform your training plan. Follow:
+- Training periodization principles (base, build, taper phases)
+- Intensity zone guidelines for workouts
+- Safe progression rules (10% rule, ACWR)
+- Location-specific considerations for ${formData.country || "Singapore"}
+- Injury prevention best practices
+- Recovery and nutrition guidelines from the knowledge base
+` : ""}
 `.trim()
 }
 

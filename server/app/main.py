@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.training_plan import router as plan_router
 from app.api.rag import router as rag_router
-
 from app.routes.plan import router as plan_router
 
 from app.graphs.runbuddy_graph import (

@@ -3,7 +3,21 @@ import { Button } from "@/components/ui/button"
 
 export default function StravaLogInButton() {
   const clientId = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID
-  const redirectUri = "http://localhost:3000/api/strava/exchange_token"
+  const redirectUri = process.env.NEXT_PUBLIC_BASE_URL 
+    ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/strava/exchange_token`
+    : "http://localhost:3000/api/strava/exchange_token"
+
+  if (!clientId) {
+    return (
+      <Button 
+        className="bg-strava hover:bg-strava/80 w-full opacity-50 cursor-not-allowed"
+        disabled
+        title="NEXT_PUBLIC_STRAVA_CLIENT_ID is not set in environment variables"
+      >
+        Log in to Strava (Not Configured)
+      </Button>
+    )
+  }
 
   const handleLogin = () => {
     const url =

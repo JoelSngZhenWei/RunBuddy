@@ -26,9 +26,16 @@ export async function getCachedActivities(
   page = "1",
   perPage = "200"
 ) {
-  const key = KEY(athleteId, page, perPage)
-  const cached = await redis.get<{ at: number; data: Activity[] }>(key)
-  return cached
+  if (!redis) return null // Skip cache if Redis not configured
+  
+  try {
+    const key = KEY(athleteId, page, perPage)
+    const cached = await redis.get<{ at: number; data: Activity[] }>(key)
+    return cached
+  } catch (error) {
+    console.warn("Failed to read from cache:", error)
+    return null
+  }
 }
 
 export async function setCachedActivities(
@@ -37,8 +44,15 @@ export async function setCachedActivities(
   perPage: string,
   data: Activity[]
 ) {
-  const key = KEY(athleteId, page, perPage)
-  await redis.set(key, { at: Date.now(), data }, { ex: TTL_SECONDS })
+  if (!redis) return // Skip cache if Redis not configured
+  
+  try {
+    const key = KEY(athleteId, page, perPage)
+    await redis.set(key, { at: Date.now(), data }, { ex: TTL_SECONDS })
+  } catch (error) {
+    console.warn("Failed to write to cache:", error)
+    // Non-fatal - continue without caching
+  }
 }
 
 export async function fetchAndCacheActivitiesNow(
@@ -47,7 +61,12 @@ export async function fetchAndCacheActivitiesNow(
   page = "1",
   perPage = "200"
 ) {
+  console.log(`Fetching activities from Strava (page=${page}, perPage=${perPage})...`)
   const data = await fetchStravaActivities(accessToken, page, perPage)
+  console.log(`✓ Received ${data?.length || 0} activities from Strava`)
+  
+  // Try to cache but don't fail if it doesn't work
   await setCachedActivities(athleteId, page, perPage, data)
+  
   return data
 }

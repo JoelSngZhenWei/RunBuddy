@@ -34,9 +34,13 @@ export async function POST() {
   // Seed Redis cache so /api/strava/activities can serve instantly
   try {
     await setCachedActivities(fake.id, "1", "200", activities as any[])
+    console.log("[Strava Simulate] Cache seeded successfully")
   } catch (e) {
-    console.error("Failed to seed Redis with fixture:", e)
-    return NextResponse.json({ ok: false, error: "Redis seed failed" }, { status: 500 })
+    console.error("[Strava Simulate] Failed to seed Redis cache:", e)
+    return NextResponse.json(
+      { ok: false, error: "Failed to seed Redis cache. Please check your Redis configuration." },
+      { status: 500 }
+    )
   }
 
   return res

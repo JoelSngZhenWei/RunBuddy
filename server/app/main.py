@@ -1,10 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.training_plan import router as plan_router
+
+from app.routes.plan import router as plan_router
+
+from app.graphs.runbuddy_graph import (
+    TrainingPlan,
+)
+from app.models.requests import PlanRequest
+from app.services.langgraph_service import generate_training_plan
 
 app = FastAPI(title="RunBuddy API")
 
-# CORS for Next.js dev on 3000
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -15,7 +21,13 @@ app.add_middleware(
 
 app.include_router(plan_router)
 
+
 @app.get("/")
 def root():
     return {"msg": "RunBuddy backend running"}
 
+
+# You can just return TrainingPlan directly
+@app.post("/plan", response_model=TrainingPlan)
+def generate_plan(req: PlanRequest):
+    return generate_training_plan(req)

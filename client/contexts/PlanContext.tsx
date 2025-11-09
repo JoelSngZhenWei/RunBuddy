@@ -1,30 +1,26 @@
+// client/contexts/PlanContext.tsx
 "use client"
 
 import React, { createContext, useContext, useState, ReactNode } from "react"
+import type { TrainingPlan } from "@/lib/types/runbuddy"
 
-interface GeneratedPlan {
-  success: boolean
-  plan: string
-  metadata?: {
-    generatedAt: string
-    calendarIntegration: boolean
-    model: string
-    tokensUsed?: any
-  }
-}
+type FocusType = "input" | "output"
 
 interface PlanContextType {
-  generatedPlan: GeneratedPlan | null
-  setGeneratedPlan: (plan: GeneratedPlan | null) => void
+  generatedPlan: TrainingPlan | null
+  setGeneratedPlan: (plan: TrainingPlan | null) => void
   isGenerating: boolean
   setIsGenerating: (generating: boolean) => void
+  focus: FocusType
+  setFocus: (focus: FocusType) => void
 }
 
 const PlanContext = createContext<PlanContextType | undefined>(undefined)
 
 export function PlanProvider({ children }: { children: ReactNode }) {
-  const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null)
+  const [generatedPlan, setGeneratedPlan] = useState<TrainingPlan | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [focus, setFocus] = useState<FocusType>("input")
 
   return (
     <PlanContext.Provider
@@ -33,6 +29,8 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         setGeneratedPlan,
         isGenerating,
         setIsGenerating,
+        focus,
+        setFocus,
       }}
     >
       {children}
@@ -47,4 +45,3 @@ export function usePlan() {
   }
   return context
 }
-

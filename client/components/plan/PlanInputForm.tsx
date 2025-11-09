@@ -24,6 +24,9 @@ import GoogleLogoutButton from "@/components/GoogleLogoutButton"
 import { Calendar, CheckCircle2, XCircle } from "lucide-react"
 import { usePlan } from "@/contexts/PlanContext"
 import { toast } from "sonner"
+import { requestTrainingPlan } from "@/lib/api/runbuddy"
+import { PlanRequestBody } from "@/lib/types/runbuddy"
+import { DatePickerField } from "../Datepicker"
 
 
 type FormValues = z.infer<typeof trainingPlanSchema>
@@ -32,7 +35,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
     const [isGoogleConnected, setIsGoogleConnected] = React.useState(false)
     const [isLoadingCalendar, setIsLoadingCalendar] = React.useState(false)
     const [calendarStatus, setCalendarStatus] = React.useState<string>("")
-    const { setGeneratedPlan, setIsGenerating } = usePlan()
+    const { setGeneratedPlan, setIsGenerating, setFocus } = usePlan()
 
     const form = useForm<FormValues>({
         resolver: zodResolver(trainingPlanSchema),
@@ -86,14 +89,14 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
 
         try {
             const calendarData = await fetchCalendarEvents(startDate, endDate)
-            
+
             if (!calendarData) {
                 setCalendarStatus("Failed to fetch calendar events")
                 return
             }
 
             const { events, eventsByDate } = calendarData
-            
+
             if (events.length === 0) {
                 setCalendarStatus("No events found in the selected date range")
                 form.setValue("calendar_events_summary", "No calendar events found.")
@@ -112,7 +115,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
             })
 
             const fullSummary = `${eventsSummary}\n${recommendations}`
-            
+
             form.setValue("calendar_events_summary", fullSummary)
             setCalendarStatus(`✓ Loaded ${events.length} calendar event(s)`)
         } catch (error) {
@@ -123,59 +126,193 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
         }
     }
 
+    // old one
+    // const onSubmit = async (values: FormValues) => {
+    //     console.log("=== TRAINING PLAN GENERATION ===")
+    //     console.log("Form Data:", values)
+
+    //     // Show the calendar data if available
+    //     if (values.use_calendar && values.calendar_events_summary) {
+    //         console.log("\n=== CALENDAR DATA ===")
+    //         console.log(values.calendar_events_summary)
+    //     }
+
+    //     // TODO: Replace this with your actual plan generation logic
+    //     // Example: Call your LLM API, generate plan, display results
+
+    //     // For now, show an alert with the data
+    //     const message = values.use_calendar 
+    //         ? `Plan generation submitted!\n\nGoal: ${values.goal_event}\nDates: ${values.start_date} to ${values.goal_date}\nCalendar Integration: ✓ Enabled\n\nCheck browser console (F12) to see full data including calendar events.`
+    //         : `Plan generation submitted!\n\nGoal: ${values.goal_event}\nDates: ${values.start_date} to ${values.goal_date}\nCalendar Integration: Not enabled\n\nCheck browser console (F12) to see full data.`
+
+    //     // Call the API to generate the plan
+    //     setIsGenerating(true)
+    //     try {
+    //         const response = await fetch('/api/generate-plan', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify(values),
+    //         })
+
+    //         if (!response.ok) {
+    //             throw new Error('Plan generation failed')
+    //         }
+
+    //         const result = await response.json()
+    //         console.log("✅ Generated Plan:", result)
+
+    //         // Store the plan in context so PlanOutput can display it
+    //         setGeneratedPlan(result)
+
+    //         alert(`✅ Plan generated successfully!\n\nClick on the "Your custom plan" section on the right to view it!`)
+
+    //     } catch (error) {
+    //         console.error("❌ Error generating plan:", error)
+    //         alert("Failed to generate plan. Please try again.")
+    //     } finally {
+    //         setIsGenerating(false)
+    //     }
+    // }
+
     const onSubmit = async (values: FormValues) => {
-        console.log("=== TRAINING PLAN GENERATION ===")
-        console.log("Form Data:", values)
-        
-        // Show the calendar data if available
+        console.log("=== TRAINING PLAN GENERATION (FORM VALUES) ===")
+        console.log(values)
+
         if (values.use_calendar && values.calendar_events_summary) {
             console.log("\n=== CALENDAR DATA ===")
             console.log(values.calendar_events_summary)
         }
-        
-        // TODO: Replace this with your actual plan generation logic
-        // Example: Call your LLM API, generate plan, display results
-        
-        // For now, show an alert with the data
-        const message = values.use_calendar 
-            ? `Plan generation submitted!\n\nGoal: ${values.goal_event}\nDates: ${values.start_date} to ${values.goal_date}\nCalendar Integration: ✓ Enabled\n\nCheck browser console (F12) to see full data including calendar events.`
-            : `Plan generation submitted!\n\nGoal: ${values.goal_event}\nDates: ${values.start_date} to ${values.goal_date}\nCalendar Integration: Not enabled\n\nCheck browser console (F12) to see full data.`
-        
-        // Call the API to generate the plan
+
+        // Helper: estimate weeks from dates, or fall back to 8
+        const computeWeeks = (start?: string, end?: string): number => {
+            if (!start || !end) return 8
+            const startDate = new Date(start)
+            const endDate = new Date(end)
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 8
+            const diffMs = endDate.getTime() - startDate.getTime()
+            const diffWeeks = diffMs / (1000 * 60 * 60 * 24 * 7)
+            return Math.max(1, Math.round(diffWeeks))
+        }
+
+        const weeks = computeWeeks(values.start_date, values.goal_date)
+
+        // Map fitness level string to the enum used by backend
+        const experienceLevel = (values.fitness_level || "Intermediate").toLowerCase() as
+            | "beginner"
+            | "intermediate"
+            | "advanced"
+
+        // Build a human-readable goal description
+        const goalDescriptionParts = [
+            `Goal event: ${values.goal_event}`,
+            `Target: ${values.goal_target}`,
+            `Fitness level: ${values.fitness_level}`,
+            `Current weekly km: ${values.current_weekly_km}`,
+        ]
+
+        if (values.injury) {
+            goalDescriptionParts.push(`Injuries/notes: ${values.injury}`)
+        }
+        if (values.country) {
+            goalDescriptionParts.push(`Training country: ${values.country}`)
+        }
+        if (values.use_calendar && values.calendar_events_summary) {
+            goalDescriptionParts.push(
+                `Calendar constraints:\n${values.calendar_events_summary}`
+            )
+        }
+
+        const goalDescription = goalDescriptionParts.join(" | ")
+
+        // placeholder recent runs
+        const recent_runs = [
+            {
+                date: "2025-10-28",
+                distance_km: 10.2,
+                duration_min: 54.0,
+                avg_pace_min_per_km: 5.29,
+                notes: "Felt strong but last 2km were hard",
+            },
+            {
+                date: "2025-10-30",
+                distance_km: 6.0,
+                duration_min: 34.0,
+                avg_pace_min_per_km: 5.67,
+                notes: "Easy neighborhood run",
+            },
+            {
+                date: "2025-11-02",
+                distance_km: 14.0,
+                duration_min: 80.0,
+                avg_pace_min_per_km: 5.71,
+                notes: "Long run, knee a bit sore in last 3km",
+            },
+        ]
+        const payload: PlanRequestBody = {
+            instruction: `Build a ${weeks}-week training plan for ${values.goal_event} with target: ${values.goal_target}`,
+            country: "Singapore",
+            weeks,
+            runner_profile: {
+                name: "Joel Sng",
+                age: 25,
+                sex: "male",
+                experience_level: experienceLevel,
+                weekly_mileage_km: values.current_weekly_km,
+                preferred_units: "km",
+                // For now, just assume generic training days; you can wire real choices later
+                available_days: ["Mon", "Wed", "Sat", "Sun"],
+                constraints: [
+                    ...(values.injury ? [values.injury] : []),
+                    ...(values.use_calendar && values.calendar_events_summary
+                        ? ["Plan must respect calendar constraints"]
+                        : []),
+                ],
+            },
+            recent_runs,
+            goal_description: goalDescription,
+        }
+
+        console.log("=== HELLO PAYLOAD SENT TO /api/plan ===")
+        console.log(payload)
+
         setIsGenerating(true)
+        setFocus("output")
         try {
-            const response = await fetch('/api/generate-plan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(values),
+            // This calls Next.js /api/plan → FastAPI /plan
+            setFocus("output")
+            const plan = await requestTrainingPlan(payload)
+            console.log("Plan received from backend:", plan)
+
+            // Store in context so PlanOutput can render later
+            setGeneratedPlan(plan)
+
+            toast("Plan generated successfully", {
+                description: `Generated a ${plan.plan_duration_weeks}-week plan for ${plan.runner_name}`,
             })
-            
-            if (!response.ok) {
-                throw new Error('Plan generation failed')
-            }
-            
-            const result = await response.json()
-            console.log("✅ Generated Plan:", result)
-            
-            // Store the plan in context so PlanOutput can display it
-            setGeneratedPlan(result)
-            
-            alert(`✅ Plan generated successfully!\n\nClick on the "Your custom plan" section on the right to view it!`)
-            
         } catch (error) {
-            console.error("❌ Error generating plan:", error)
-            alert("Failed to generate plan. Please try again.")
+            console.error("Error generating plan:", error)
+            toast("Failed to generate plan", {
+                description: `${error}`,
+            })
         } finally {
             setIsGenerating(false)
         }
     }
 
+
     const showAllContent = focus === "input"
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
+            <form
+                onSubmit={form.handleSubmit(
+                    onSubmit,
+                    (errors) => {
+                        console.log("Validation errors:", errors);
+                    }
+                )}
+                className="space-y-6"
+            >
                 <div className="grid grid-rows-5 gap-8">
                     {/* form row 1 */}
                     <div className="grid grid-cols-2 gap-4">
@@ -220,11 +357,11 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
                     </div>
 
                     {/* form row2 */}
-                    {/* <div className="grid grid-cols-2 gap-4"> */}
-                        {/* <DatePickerField control={form.control} name="start_date" label="Start Date" /> */}
-                        {/* <DatePickerField control={form.control} name="goal_date" label="Goal Date" /> */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <DatePickerField control={form.control} name="start_date" label="Start Date" />
+                        <DatePickerField control={form.control} name="goal_date" label="Goal Date" />
 
-                    {/* </div> */}
+                    </div>
 
                     {/* form row 3 */}
                     <div className="grid grid-cols-2 gap-4">
@@ -432,15 +569,15 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
                     <Button
                         type="submit"
                         disabled={!showAllContent || form.formState.isSubmitting}
-                        onClick={() =>
-                            toast("Event has been created", {
-                                description: "Sunday, December 03, 2023 at 9:00 AM",
-                                action: {
-                                    label: "Undo",
-                                    onClick: () => console.log("Undo"),
-                                },
-                            })
-                        }
+                    // onClick={() =>
+                    //     toast("Event has been created", {
+                    //         description: "Sunday, December 03, 2023 at 9:00 AM",
+                    //         action: {
+                    //             label: "Undo",
+                    //             onClick: () => console.log("Undo"),
+                    //         },
+                    //     })
+                    // }
                     >
                         {form.formState.isSubmitting ? "Generating..." : "Generate Plan"}
                     </Button>

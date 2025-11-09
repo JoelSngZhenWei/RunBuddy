@@ -39,14 +39,27 @@ export async function GET(req: NextRequest) {
       data: fresh,
     })
   } catch (e: any) {
-    // If Strava fails but we have any cache, return it as a degraded experience
+    const message = String(e?.message || e)
+
+    // Try degraded cache first
     const fallback = await getCachedActivities(athleteId, page, per_page)
     if (fallback?.data) {
       return NextResponse.json(
-        { cached: true, at: fallback.at, data: fallback.data, degraded: true, error: String(e?.message || e) },
+        {
+          cached: true,
+          at: fallback.at,
+          data: fallback.data,
+          degraded: true,
+          error: message,
+        },
         { status: 200 }
       )
     }
-    return NextResponse.json({ error: String(e?.message || e) }, { status: 500 })
+
+    // Hard error but still keep data: []
+    return NextResponse.json(
+      { error: message, data: [] },
+      { status: 500 }
+    )
   }
 }

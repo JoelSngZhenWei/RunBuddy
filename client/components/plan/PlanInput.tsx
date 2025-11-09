@@ -1,11 +1,11 @@
 "use client"
 
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { PlanInputForm } from "./form/PlanInputForm"
+import { PlanInputForm } from "./PlanInputForm"
 import { Bot, Edit2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
-import { ScrollArea } from "./ui/scroll-area"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
+import { ScrollArea } from "../ui/scroll-area"
 import { toast } from "sonner"
 
 export default function PlanInput({

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.training_plan import router as plan_router
+from app.api.rag import router as rag_router
 
 app = FastAPI(title="RunBuddy API")
 
@@ -14,6 +15,7 @@ app.add_middleware(
 )
 
 app.include_router(plan_router)
+app.include_router(rag_router)
 
 @app.get("/")
 def root():

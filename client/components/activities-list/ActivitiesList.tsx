@@ -1,13 +1,14 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import ActivityCard from "@/components/ActivityCard"
-import { Spinner } from "./ui/spinner"
-import ActivityListControl from "./ActivityListControl"
-import { ScrollArea } from "./ui/scroll-area"
-import ActivityCardSkeleton from "./ActivityCardSkeleton"
+import ActivityCard from "@/components/activities-list/ActivityCard"
+
+import { ScrollArea } from "../ui/scroll-area"
+
 import { toast } from "sonner"
 import { FaRunning } from "react-icons/fa"
+import ActivityListControl from "./ActivityListControl"
+import ActivityCardSkeleton from "./ActivityCardSkeleton"
 
 export default function ActivitiesList() {
   const [activities, setActivities] = useState<any[]>([])

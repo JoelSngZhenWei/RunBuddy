@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import StravaLogInButton from "@/components/StravaLogInButton"
-import ActivitiesList from "@/components/ActivitiesList"
+import ActivitiesList from "@/components/activities-list/ActivitiesList"
 import SimulateLogInButton from "@/components/SimulateLogInButton"
 
 export default async function Home() {

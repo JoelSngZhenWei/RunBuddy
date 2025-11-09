@@ -21,35 +21,38 @@ export interface RecentRun {
   notes?: string;
 }
 
-export interface TrainingDay {
+export interface Workout {
   day: string;              // "Mon", "Tue", etc.
-  workout_type: string;     // "Easy Run", "Intervals", etc.
-  description: string;
+  focus: string;
   distance_km?: number | null;
+  target_pace_min_per_km?: number | null;
+  description: string;
   notes?: string | null;
 }
 
 export interface WeeklyPlan {
   week_number: number;
-  days: TrainingDay[];
+  focus_summary: string;
+  workouts: Workout[];
 }
 
-export interface WeeklyOverview {
-  week_number: number;
-  focus: string;
-  total_distance_km: number;
-}
+// export interface WeeklyOverview {
+//   week_number: number;
+//   focus: string;
+//   total_distance_km: number;
+// }
 
 export interface TrainingPlan {
-  runner_name: string;
+  // runner_name: string;
   goal_description: string;
   plan_duration_weeks: number;
-  weekly_overview: WeeklyOverview[];
+  weekly_overview: string;
   weekly_plans: WeeklyPlan[];
 }
 
 export interface PlanRequestBody {
   instruction: string;
+  country: string;
   weeks: number;
   runner_profile: RunnerProfile;
   recent_runs: RecentRun[];

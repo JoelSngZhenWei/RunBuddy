@@ -1,10 +1,10 @@
 "use client"
 
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { PlanInputForm } from "./form/PlanInputForm"
+import { PlanInputForm } from "./PlanInputForm"
 import { Activity, Bot, Brain, Copy, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import PlanOutputDetails from "./PlanOutputDetails"
 import { toast } from "sonner"
 

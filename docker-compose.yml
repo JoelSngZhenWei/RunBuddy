@@ -7,7 +7,7 @@ services:
     env_file:
       - server/.env # optional
     ports:
-      - "8000:8000" # change left side if 8000 is busy, e.g. "8010:8000"
+      - "8000:8000"
     # Dev hot reload:
     volumes:
       - ./server:/app
@@ -21,10 +21,10 @@ services:
     image: runbuddy-client:latest
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    env_file:
+    - client/.env
     volumes:
-      - ./client:/app # 🔥 Hot reload sync with local edits
+      - ./client:/app # Hot reload sync with local edits
       - /app/node_modules # Avoid overwriting node_modules
     depends_on:
       - server

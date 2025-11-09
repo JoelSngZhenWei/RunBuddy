@@ -12,6 +12,7 @@ export default function Test() {
   useEffect(() => {
     const payload: PlanRequestBody = {
       instruction: "Build a 4-week training plan",
+      country: "Singapore",
       weeks: 4,
       runner_profile: {
         name: "Joel Sng",

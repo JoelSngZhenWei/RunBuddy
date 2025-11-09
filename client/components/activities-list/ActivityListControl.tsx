@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { MultiSelectSports } from "./MultiSelectSports"
+import { MultiSelectSports } from "../MultiSelectSports"
 import { Filter, Recycle } from "lucide-react"
 import { toast } from "sonner"
 // import { MultiSelectFilters } from "./MultiSelectFilters" // (unused)

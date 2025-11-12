@@ -135,21 +135,24 @@ def planner_node(state: OverallState):
             queries.append({
                 "query": f"training plan structure for {goal_description} {fitness_level}",
                 "category": "Core Training Knowledge",
-                "subcategory": "Training periodisation, base-build-taper"
+                "subcategory": "Training periodisation, base-build-taper",
+                "context": "training_plan"
             })
             
             # Intensity zones and pace
             queries.append({
                 "query": "heart rate zones and pace for running training",
                 "category": "Core Training Knowledge",
-                "subcategory": "Intensity zones, HR pace"
+                "subcategory": "Intensity zones, HR pace",
+                "context": "training_plan"
             })
             
             # Progression guidelines (10% rule, ACWR)
             queries.append({
                 "query": "weekly mileage progression and training load management",
                 "category": "Core Training Knowledge",
-                "subcategory": "Progression & load (10 % rule, ACWR)"
+                "subcategory": "Progression & load (10 % rule, ACWR)",
+                "context": "training_plan"
             })
             
             # Location-specific advice (Singapore)
@@ -157,33 +160,38 @@ def planner_node(state: OverallState):
                 queries.append({
                     "query": "running training in heat and humidity adaptation",
                     "category": "SG Context",
-                    "subcategory": "Heat and humidity adaptation"
+                    "subcategory": "Heat and humidity adaptation",
+                    "context": "training_plan"
                 })
                 
                 queries.append({
                     "query": "running routes and locations in Singapore",
                     "category": "SG Context",
-                    "subcategory": "Running routes"
+                    "subcategory": "Running routes",
+                    "context": "training_plan"
                 })
                 
                 # Singapore training guidelines
                 queries.append({
                     "query": "Singapore running guidelines and safety",
                     "category": "SG Context",
-                    "subcategory": "Guidelines"
+                    "subcategory": "Guidelines",
+                    "context": "training_plan"
                 })
             
             # Injury prevention
             queries.append({
                 "query": "injury prevention and safe running practices",
                 "category": "Core Training Knowledge",
-                "subcategory": "Injury prevention, Form, Cadence"
+                "subcategory": "Injury prevention, Form, Cadence",
+                "context": "training_plan"
             })
             
             # Recovery and nutrition
             queries.append({
                 "query": "recovery HRV sleep and nutrition for runners",
-                "category": "Core Training Knowledge"
+                "category": "Core Training Knowledge",
+                "context": "training_plan"
             })
             
             # Gather all relevant context

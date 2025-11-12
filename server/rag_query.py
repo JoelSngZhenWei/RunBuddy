@@ -10,6 +10,7 @@ from typing import List, Dict, Optional, Any
 from dotenv import load_dotenv
 from postgrest import SyncPostgrestClient
 from openai import OpenAI
+from rag_metrics import get_metrics_tracker
 
 # -------------------------
 # Env & clients
@@ -72,6 +73,7 @@ class RAGQueryEngine:
         subcategory: Optional[str] = None,
         similarity_threshold: Optional[float] = None,
         max_results: Optional[int] = None,
+        context: Optional[str] = None,  # e.g., "training_plan", "user_query"
     ) -> List[Dict[str, Any]]:
         """
         Calls public.match_documents via PostgREST RPC, then optionally filters by metadata
@@ -104,6 +106,16 @@ class RAGQueryEngine:
                     continue
                 filtered.append(r)
             results = filtered
+
+        # Log metrics
+        metrics = get_metrics_tracker()
+        metrics.log_retrieval(
+            query=query,
+            results=results,
+            category=category,
+            subcategory=subcategory,
+            context=context
+        )
 
         return results
 

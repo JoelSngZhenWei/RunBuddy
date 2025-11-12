@@ -25,12 +25,15 @@ import {
 } from "@/lib/calendar-utils";
 import GoogleLogInButton from "@/components/GoogleLogInButton";
 import GoogleLogoutButton from "@/components/GoogleLogoutButton";
-import { Calendar, CheckCircle2, XCircle } from "lucide-react";
+import { Calendar, CheckCircle2, XCircle, Watch } from "lucide-react"
 import { usePlan } from "@/contexts/PlanContext";
 import { toast } from "sonner";
 import { requestTrainingPlan } from "@/lib/api/runbuddy";
 import { PlanRequestBody } from "@/lib/types/runbuddy";
 import { DatePickerField } from "../Datepicker";
+import { ScrollArea } from "../ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { activitySummaries } from "@/fixtures/wearable-data-samples"
 
 type FormValues = z.infer<typeof trainingPlanSchema>;
 
@@ -54,6 +57,9 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
       goal_date: "",
       use_calendar: false,
       calendar_events_summary: "",
+      use_wearable: false,
+      wearable_data: activitySummaries.sedentary,
+      activity_level: "sedentary" as const,
     },
   });
 
@@ -235,6 +241,11 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
     if (values.use_calendar && values.calendar_events_summary) {
       goalDescriptionParts.push(
         `Calendar constraints:\n${values.calendar_events_summary}`
+      );
+    }
+    if (values.use_wearable) {
+      goalDescriptionParts.push(
+        `Wearable data summary:\n${values.wearable_data}`
       );
     }
 
@@ -567,11 +578,10 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
                     )}
                     {calendarStatus && (
                       <p
-                        className={`text-xs ${
-                          calendarStatus.includes("✓")
-                            ? "text-green-600"
-                            : "text-muted-foreground"
-                        }`}
+                        className={`text-xs ${calendarStatus.includes("✓")
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                          }`}
                       >
                         {calendarStatus}
                       </p>
@@ -594,19 +604,182 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
           </div>
         </div>
 
+        {/* Wearable Integration Section */}
+        <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <Watch className="h-4 w-4" />
+                Wearable Integration
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Consider your recovery metrics when planning workouts
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                Simulation Mode
+              </div>
+
+
+
+
+
+
+
+
+
+
+            </div>
+          </div>
+
+          <FormField
+            control={form.control}
+            name="use_wearable"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    Use wearable data
+                  </FormLabel>
+                  <FormDescription className="text-xs">
+                    Generate a training plan that adapts to your recovery state
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {form.watch("use_wearable") && (
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="activity_level"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select
+                      onValueChange={(value: "sedentary" | "moderate" | "high") => {
+                        field.onChange(value);
+                        form.setValue("wearable_data", activitySummaries[value]);
+                      }}
+                      value={field.value}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select activity level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sedentary">Sedentary</SelectItem>
+                        <SelectItem value="moderate">Moderately Active</SelectItem>
+                        <SelectItem value="high">Highly Active</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose your typical activity level
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+
+              <div className="p-3 bg-muted/50 rounded-md space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium mb-1">Heart Rate</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {activitySummaries[form.watch("activity_level") ?? "sedentary"].averageHeartRate}
+                      </span>
+                      <span className="text-xs text-muted-foreground">bpm</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">HRV</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {activitySummaries[form.watch("activity_level") ?? "sedentary"].averageHRV}
+                      </span>
+                      <span className="text-xs text-muted-foreground">ms</span>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium mb-1">Sleep Score</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {activitySummaries[form.watch("activity_level") ?? "sedentary"].sleepQuality}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Recovery Status</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {activitySummaries[form.watch("activity_level") ?? "sedentary"].recoveryStatus}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium mb-1">Daily Steps</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {activitySummaries[form.watch("activity_level") ?? "sedentary"].averageSteps.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Active Calories</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {activitySummaries[form.watch("activity_level") ?? "sedentary"].averageActiveCalories}
+                      </span>
+                      <span className="text-xs text-muted-foreground">kcal</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1 pt-2 border-t">
+                  <p className="text-sm font-medium">Fitness Assessment</p>
+                  <p className="text-sm">
+                    Based on your metrics, you are classified as{" "}
+                    <span className="font-semibold">
+                      {activitySummaries[form.watch("activity_level") ?? "sedentary"].fitnessLevel}
+                    </span>
+                    {" "}with a{" "}
+                    <span className="font-semibold lowercase">
+                      {activitySummaries[form.watch("activity_level") ?? "sedentary"].recoveryStatus}
+                    </span>
+                    {" "}recovery capacity.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center gap-3">
           <Button
             type="submit"
             disabled={!showAllContent || form.formState.isSubmitting}
-            // onClick={() =>
-            //     toast("Event has been created", {
-            //         description: "Sunday, December 03, 2023 at 9:00 AM",
-            //         action: {
-            //             label: "Undo",
-            //             onClick: () => console.log("Undo"),
-            //         },
-            //     })
-            // }
+          // onClick={() =>
+          //     toast("Event has been created", {
+          //         description: "Sunday, December 03, 2023 at 9:00 AM",
+          //         action: {
+          //             label: "Undo",
+          //             onClick: () => console.log("Undo"),
+          //         },
+          //     })
+          // }
           >
             {form.formState.isSubmitting ? "Generating..." : "Generate Plan"}
           </Button>

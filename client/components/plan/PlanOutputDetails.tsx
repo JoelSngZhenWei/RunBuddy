@@ -1,24 +1,25 @@
 "use client"
 
-import { CardContent, CardHeader } from "../ui/card";
+import { CardContent } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 import { usePlan } from "@/contexts/PlanContext";
 import { WeeklyPlanCard } from "./PlanOutputWeeklyPlanCard";
-import { OverallWorkoutGraph } from "./WorkoutGraphOverall";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { WorkoutAtAGlance } from "./PlanOutputWorkoutGlance";
 import { Button } from "../ui/button";
-import { Calendar, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Calendar, XCircle, Loader2 } from "lucide-react";
 import { addPlanToGoogleCalendar } from "@/lib/calendar-event-utils";
 import { toast } from "sonner";
 import { useState } from "react";
 import * as React from "react";
-
-
+import { HydrationPlanDisplay } from "./nutritionhydration/hydration";
+import { DayKey } from "@/lib/types";
+import { NutritionPlanDisplay } from "./nutritionhydration/nutrition";
 export default function PlanOutputDetails() {
-    const { generatedPlan, isGenerating, planStartDate } = usePlan()
+    const { generatedPlan, hydrationPlan, nutritionPlan, isGenerating, planStartDate } = usePlan()
     const [isAddingToCalendar, setIsAddingToCalendar] = useState(false)
     const [isGoogleConnected, setIsGoogleConnected] = useState(false)
+    const [selectedDay, setSelectedDay] = React.useState<DayKey>("average_day")
 
     // Check Google Calendar connection status
     React.useEffect(() => {
@@ -53,7 +54,7 @@ export default function PlanOutputDetails() {
         setIsAddingToCalendar(true)
         try {
             const result = await addPlanToGoogleCalendar(generatedPlan, planStartDate)
-            
+
             if (result.success) {
                 toast.success("Plan added to calendar!", {
                     description: `Successfully added ${result.created} workout${result.created !== 1 ? 's' : ''} to your Google Calendar.`,
@@ -134,7 +135,7 @@ export default function PlanOutputDetails() {
                     </div>
                 )}
 
-                <ScrollArea className="h-[85vh] pb-10">
+                <ScrollArea className="h-[85vh] pb-16">
                     <Tabs defaultValue="breakdown" className="flex flex-col gap-4">
                         <TabsList className="w-full justify-start">
                             <TabsTrigger value="breakdown">
@@ -142,6 +143,9 @@ export default function PlanOutputDetails() {
                             </TabsTrigger>
                             <TabsTrigger value="glance">
                                 Your Workout at a Glance
+                            </TabsTrigger>
+                            <TabsTrigger value="nutrition">
+                                Nutrition & Hydration
                             </TabsTrigger>
                         </TabsList>
 
@@ -188,7 +192,35 @@ export default function PlanOutputDetails() {
 
                         {/* Tab 2: Your Workout at a Glance */}
                         <TabsContent value="glance" className="mt-0">
-                            <WorkoutAtAGlance plan={generatedPlan} />
+                            <WorkoutAtAGlance plan={generatedPlan} hydrationPlan={hydrationPlan} nutritionPlan={nutritionPlan} />
+                        </TabsContent>
+
+                        <TabsContent value="nutrition" className="mt-0">
+                            <div className="sticky top-0 z-10 flex flex-wrap space-x-6 bg-card p-2">
+                                {(["average_day", "training_day", "race_day"] as DayKey[]).map((day) => (
+                                    <Button
+                                        key={day}
+                                        size="sm"
+                                        variant={selectedDay === day ? "default" : "outline"}
+                                        onClick={() => setSelectedDay(day)}
+                                    >
+                                        {day === "average_day"
+                                            ? "Average Day"
+                                            : day === "training_day"
+                                                ? "Training Day"
+                                                : "Race Day"}
+                                    </Button>
+                                ))}
+                            </div>
+                            <div className="grid grid-rows">
+                                <div className="">
+                                    <HydrationPlanDisplay hydrationPlan={hydrationPlan} selectedDay={selectedDay} onSelectedDayChange={setSelectedDay} />
+                                </div>
+                                <div className="">
+                                    <NutritionPlanDisplay nutritionPlan={nutritionPlan} selectedDay={selectedDay} onSelectedDayChange={setSelectedDay} />
+                                </div>
+                            </div>
+
                         </TabsContent>
                     </Tabs>
                 </ScrollArea>

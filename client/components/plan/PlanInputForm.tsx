@@ -36,6 +36,7 @@ import { activitySummaries } from "@/fixtures/wearable-data-samples"
 
 import PlanInputFieldDayPicker, { Day } from "./PlanInputFieldDayPicker";
 import { PlanResponse } from "@/lib/types";
+import { loadRecentRunsFromCached } from "@/lib/load-runs-from-cache";
 
 type FormValues = z.infer<typeof trainingPlanSchema>;
 
@@ -206,31 +207,29 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
     }
 
     const goalDescription = goalDescriptionParts.join(" | ");
+    let recent_runs = [];
+    try {
+      // uses cookies via your API route; no token handling in browser needed
+      recent_runs = await loadRecentRunsFromCached({
+        page: "1",
+        perPage: "200",
+        limit: 10,
+        refresh: false, // set true to bypass cache if you want
+      });
+      console.log("Using Strava recent_runs:", recent_runs);
+    } catch (e) {
+      console.warn("Could not load Strava recent runs; falling back:", e);
+    }
+    
+    // Fallback to your current hardcoded examples if empty
+    if (recent_runs.length === 0) {
+      recent_runs = [
+        { date: "2025-10-28", distance_km: 10.2, duration_min: 54.0, avg_pace_min_per_km: 5.29, notes: "Felt strong but last 2km were hard" },
+        { date: "2025-10-30", distance_km: 6.0,  duration_min: 34.0, avg_pace_min_per_km: 5.67, notes: "Easy neighborhood run" },
+        { date: "2025-11-02", distance_km: 14.0, duration_min: 80.0, avg_pace_min_per_km: 5.71, notes: "Long run, knee a bit sore in last 3km" },
+      ];
+    }
 
-    // placeholder recent runs
-    const recent_runs = [
-      {
-        date: "2025-10-28",
-        distance_km: 10.2,
-        duration_min: 54.0,
-        avg_pace_min_per_km: 5.29,
-        notes: "Felt strong but last 2km were hard",
-      },
-      {
-        date: "2025-10-30",
-        distance_km: 6.0,
-        duration_min: 34.0,
-        avg_pace_min_per_km: 5.67,
-        notes: "Easy neighborhood run",
-      },
-      {
-        date: "2025-11-02",
-        distance_km: 14.0,
-        duration_min: 80.0,
-        avg_pace_min_per_km: 5.71,
-        notes: "Long run, knee a bit sore in last 3km",
-      },
-    ];
     const payload: PlanRequestBody = {
       instruction: `Build a ${weeks}-week training plan for ${values.goal_event} with target: ${values.goal_target}`,
       country: values.country || "Singapore",

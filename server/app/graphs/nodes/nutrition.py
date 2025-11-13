@@ -49,25 +49,24 @@ Output ONLY JSON for NutritionPlan:
 
     print(f"[{inspect.currentframe().f_code.co_name}] Invoking model chain")
     chain = prompt | model.with_structured_output(NutritionPlan)
-    guidelines: NutritionPlan = chain.invoke({"q": human_msg})
+    plan: NutritionPlan = chain.invoke({"q": human_msg})
 
     msg = AIMessage(
         content="[NUTRITION_MACROS]\n"
-        f"Avg: C{guidelines.average_macros.carbs_pct}% / "
-        f"P{guidelines.average_macros.protein_pct}% / "
-        f"F{guidelines.average_macros.fat_pct}%\n"
-        f"Train-day: C{guidelines.training_day_macros.carbs_pct}% / "
-        f"P{guidelines.training_day_macros.protein_pct}% / "
-        f"F{guidelines.training_day_macros.fat_pct}%\n"
-        f"Race-day: C{guidelines.race_day_macros.carbs_pct}% / "
-        f"P{guidelines.race_day_macros.protein_pct}% / "
-        f"F{guidelines.race_day_macros.fat_pct}%"
+        f"Avg: C{plan.average_macros.carbs_pct}% / "
+        f"P{plan.average_macros.protein_pct}% / "
+        f"F{plan.average_macros.fat_pct}%\n"
+        f"Train-day: C{plan.training_day_macros.carbs_pct}% / "
+        f"P{plan.training_day_macros.protein_pct}% / "
+        f"F{plan.training_day_macros.fat_pct}%\n"
+        f"Race-day: C{plan.race_day_macros.carbs_pct}% / "
+        f"P{plan.race_day_macros.protein_pct}% / "
+        f"F{plan.race_day_macros.fat_pct}%"
     )
     messages = (state.messages or []) + [msg]
 
     print(f"[{inspect.currentframe().f_code.co_name}] Nutrition plan generated")
-
     return {
-        "nutrition_guidelines": guidelines,  # only changed key
+        "nutrition_plan": plan,  # only changed key
         "messages": messages,  # add_messages channel
     }

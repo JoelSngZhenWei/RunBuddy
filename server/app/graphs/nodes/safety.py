@@ -19,6 +19,13 @@ reasonable and safe for the runner.
 User instruction:
 {state.instruction}
 
+User profile:
+{state.runner_profile}
+
+Average weather:
+{state.avg_temp} degrees celcius
+{state.avg_humidity} percent average humidity
+
 Training plan to review:
 {state.plan.model_dump()}
 
@@ -49,7 +56,11 @@ Then briefly explain why.
     )
     messages.append(AIMessage(content="[SAFETY CHECK OUTPUT]\n" + text))
     
-    print(f"[{inspect.currentframe().f_code.co_name}] Safety checks passed")
+    if approved:
+        print(f"[{inspect.currentframe().f_code.co_name}] Plan passed safety check")
+    else:
+        print(f"[{inspect.currentframe().f_code.co_name}] Plan failed safety check")
+
     
     return {
         "approved": approved,

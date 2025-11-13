@@ -26,7 +26,7 @@ def route_node(state: OverallState):
     # Only process routes for Singapore with a valid address
     if not address or state.country.lower() != "singapore":
         print(
-            f"ℹ️ Skipping route planning (address: {address}, country: {state.country})"
+            f"[{inspect.currentframe().f_code.co_name}] Skipping route planning (address: {address}, country: {state.country})"
         )
         messages = state.messages or []
         messages.append(

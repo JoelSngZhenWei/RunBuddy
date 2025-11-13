@@ -131,8 +131,8 @@ export function WeeklyPlanCard({ week }: WeeklyPlanCardProps) {
                   </p>
 
                   {mainSelected?.notes && (
-                    <div className="mt-2 rounded-md bg-background p-3 border border-border">
-                      <p className="text-sm font-medium mb-2">📝 Notes</p>
+                    <div className="mt-2 rounded-md p-3 border border-border">
+                      <p className="text-sm font-medium mb-2">Notes</p>
                       <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-96 overflow-y-auto">
                         {mainSelected.notes}
                       </div>

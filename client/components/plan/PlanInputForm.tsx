@@ -41,7 +41,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
   const [isGoogleConnected, setIsGoogleConnected] = React.useState(false);
   const [isLoadingCalendar, setIsLoadingCalendar] = React.useState(false);
   const [calendarStatus, setCalendarStatus] = React.useState<string>("");
-  const { setGeneratedPlan, setIsGenerating, setFocus } = usePlan();
+  const { setGeneratedPlan, setIsGenerating, setFocus, setPlanStartDate } = usePlan();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(trainingPlanSchema),
@@ -314,9 +314,13 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
 
       // Store in context so PlanOutput can render later
       setGeneratedPlan(plan);
+      // Store start date for calendar integration
+      if (values.start_date) {
+        setPlanStartDate(values.start_date);
+      }
 
       toast("Plan generated successfully", {
-        description: `Generated a ${plan.plan_duration_weeks}-week plan for the user.`,
+        description: `Generated a ${plan.plan_duration_weeks}-week plan for your goal: ${values.goal_event}`,
       });
     } catch (error) {
       console.error("Error generating plan:", error);

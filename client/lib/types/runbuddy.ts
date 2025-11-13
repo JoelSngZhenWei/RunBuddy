@@ -57,4 +57,5 @@ export interface PlanRequestBody {
   runner_profile: RunnerProfile;
   recent_runs: RecentRun[];
   goal_description: string;
+  address?: string;
 }

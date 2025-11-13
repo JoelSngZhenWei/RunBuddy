@@ -41,7 +41,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
   const [isGoogleConnected, setIsGoogleConnected] = React.useState(false);
   const [isLoadingCalendar, setIsLoadingCalendar] = React.useState(false);
   const [calendarStatus, setCalendarStatus] = React.useState<string>("");
-  const { setGeneratedPlan, setIsGenerating, setFocus } = usePlan();
+  const { setGeneratedPlan, setIsGenerating, setFocus, setPlanStartDate } = usePlan();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(trainingPlanSchema),
@@ -60,6 +60,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
       use_wearable: false,
       wearable_data: activitySummaries.sedentary,
       activity_level: "sedentary" as const,
+      address: "",
     },
   });
 
@@ -277,7 +278,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
     ];
     const payload: PlanRequestBody = {
       instruction: `Build a ${weeks}-week training plan for ${values.goal_event} with target: ${values.goal_target}`,
-      country: "Singapore",
+      country: values.country || "Singapore",
       weeks,
       runner_profile: {
         name: "Joel Sng",
@@ -297,6 +298,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
       },
       recent_runs,
       goal_description: goalDescription,
+      address: values.address || undefined,
     };
 
     console.log("=== HELLO PAYLOAD SENT TO /api/plan ===");
@@ -312,9 +314,13 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
 
       // Store in context so PlanOutput can render later
       setGeneratedPlan(plan);
+      // Store start date for calendar integration
+      if (values.start_date) {
+        setPlanStartDate(values.start_date);
+      }
 
       toast("Plan generated successfully", {
-        description: `Generated a ${plan.plan_duration_weeks}-week plan for ${plan.runner_name}`,
+        description: `Generated a ${plan.plan_duration_weeks}-week plan for your goal: ${values.goal_event}`,
       });
     } catch (error) {
       console.error("Error generating plan:", error);
@@ -506,6 +512,25 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
                   {showAllContent && (
                     <FormDescription>
                       Any past injuries you would like to highlight.
+                    </FormDescription>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start/End Address (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., 123 Kim Tian Road, 160123" {...field} />
+                  </FormControl>
+                  {showAllContent && (
+                    <FormDescription>
+                      Starting and ending point for your runs.
                     </FormDescription>
                   )}
                   <FormMessage />

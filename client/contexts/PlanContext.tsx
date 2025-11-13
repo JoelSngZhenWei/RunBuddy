@@ -13,6 +13,8 @@ interface PlanContextType {
   setIsGenerating: (generating: boolean) => void
   focus: FocusType
   setFocus: (focus: FocusType) => void
+  planStartDate: string | null
+  setPlanStartDate: (date: string | null) => void
 }
 
 const PlanContext = createContext<PlanContextType | undefined>(undefined)
@@ -21,6 +23,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const [generatedPlan, setGeneratedPlan] = useState<TrainingPlan | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [focus, setFocus] = useState<FocusType>("input")
+  const [planStartDate, setPlanStartDate] = useState<string | null>(null)
 
   return (
     <PlanContext.Provider
@@ -31,6 +34,8 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         setIsGenerating,
         focus,
         setFocus,
+        planStartDate,
+        setPlanStartDate,
       }}
     >
       {children}

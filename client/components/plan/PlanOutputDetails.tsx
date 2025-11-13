@@ -7,10 +7,72 @@ import { WeeklyPlanCard } from "./PlanOutputWeeklyPlanCard";
 import { OverallWorkoutGraph } from "./WorkoutGraphOverall";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { WorkoutAtAGlance } from "./PlanOutputWorkoutGlance";
+import { Button } from "../ui/button";
+import { Calendar, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { addPlanToGoogleCalendar } from "@/lib/calendar-event-utils";
+import { toast } from "sonner";
+import { useState } from "react";
+import * as React from "react";
 
 
 export default function PlanOutputDetails() {
-    const { generatedPlan, isGenerating } = usePlan()
+    const { generatedPlan, isGenerating, planStartDate } = usePlan()
+    const [isAddingToCalendar, setIsAddingToCalendar] = useState(false)
+    const [isGoogleConnected, setIsGoogleConnected] = useState(false)
+
+    // Check Google Calendar connection status
+    React.useEffect(() => {
+        const checkConnection = async () => {
+            try {
+                const response = await fetch("/api/google/events?start_date=2024-01-01&end_date=2024-01-02", {
+                    credentials: "same-origin",
+                })
+                setIsGoogleConnected(response.ok)
+            } catch {
+                setIsGoogleConnected(false)
+            }
+        }
+        checkConnection()
+    }, [])
+
+    const handleAddToCalendar = async () => {
+        if (!generatedPlan || !planStartDate) {
+            toast.error("Missing plan or start date", {
+                description: "Please regenerate the plan with a start date.",
+            })
+            return
+        }
+
+        if (!isGoogleConnected) {
+            toast.error("Not connected to Google Calendar", {
+                description: "Please connect your Google Calendar first.",
+            })
+            return
+        }
+
+        setIsAddingToCalendar(true)
+        try {
+            const result = await addPlanToGoogleCalendar(generatedPlan, planStartDate)
+            
+            if (result.success) {
+                toast.success("Plan added to calendar!", {
+                    description: `Successfully added ${result.created} workout${result.created !== 1 ? 's' : ''} to your Google Calendar.`,
+                    duration: 5000,
+                })
+            } else {
+                toast.error("Some events failed to add", {
+                    description: `Added ${result.created} events, but ${result.failed} failed.`,
+                })
+            }
+        } catch (error: any) {
+            console.error("Error adding plan to calendar:", error)
+            toast.error("Failed to add plan to calendar", {
+                description: error.message || "Please try again or check your Google Calendar connection.",
+            })
+        } finally {
+            setIsAddingToCalendar(false)
+        }
+    }
 
     // If generating, show loading state
     if (isGenerating) {
@@ -32,6 +94,46 @@ export default function PlanOutputDetails() {
 
         return (
             <CardContent className="space-y-6 text-sm">
+                {/* Add to Calendar Button */}
+                {planStartDate && (
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                        <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            <div>
+                                <p className="text-sm font-medium">Add to Google Calendar</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Add all workouts from this plan to your calendar
+                                </p>
+                            </div>
+                        </div>
+                        {isGoogleConnected ? (
+                            <Button
+                                onClick={handleAddToCalendar}
+                                disabled={isAddingToCalendar}
+                                variant="default"
+                                size="sm"
+                            >
+                                {isAddingToCalendar ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Adding...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Calendar className="h-4 w-4 mr-2" />
+                                        Add to Calendar
+                                    </>
+                                )}
+                            </Button>
+                        ) : (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <XCircle className="h-4 w-4" />
+                                Not connected
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <ScrollArea className="h-[85vh] pb-10">
                     <Tabs defaultValue="breakdown" className="flex flex-col gap-4">
                         <TabsList className="w-full justify-start">

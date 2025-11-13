@@ -1,9 +1,9 @@
 "use client"
 
-import { TrainingPlan } from "@/lib/types/runbuddy";
 import { OverallWorkoutGraph } from "./WorkoutGraphOverall";
 import { PaceGraphGlance } from "./PaceGraphGlance";
 import { PieGraphGlance } from "./PieGraphGlance";
+import { TrainingPlan } from "@/lib/types";
 
 type WorkoutAtAGlanceProps = {
     plan: TrainingPlan;

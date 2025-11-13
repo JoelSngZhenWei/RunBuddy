@@ -21,7 +21,7 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Workout } from "@/lib/types/runbuddy";
+import { Workout } from "@/lib/types";
 
 type WorkoutGraphProps = {
     workouts: Workout[];

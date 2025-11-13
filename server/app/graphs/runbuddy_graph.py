@@ -1,572 +1,79 @@
 # runbuddy_graph.py
-import os
-import sys
 import inspect
 from pathlib import Path
 
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, START, END
-import requests
-
-from app.core.config import settings
-from app.core.coords import COUNTRY_COORDS
-from app.models.plan import TrainingPlan
 from app.graphs.overall_state import OverallState
+from app.graphs.nodes.classify_intent import classify_intent_node, route_from_intent
 
-# Add server directory to path for RAG imports
-sys.path.append(str(Path(__file__).parent.parent.parent))
-try:
-    from rag_query import RAGQueryEngine
-    RAG_AVAILABLE = True
-except ImportError:
-    print("Warning: RAG system not available. Install dependencies and set SUPABASE_URL/SUPABASE_SERVICE_KEY")
-    RAG_AVAILABLE = False
-
-
-# ----------------- Model init -----------------
-
-# In prod, set this in env, not hard-code it.
-os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
-model = init_chat_model("gpt-4.1", temperature=0)
-
-# ----------------- Nodes -----------------
-
-from langchain_core.prompts import ChatPromptTemplate
+from app.graphs.nodes.route import route_node
+from app.graphs.nodes.nutrition import nutrition_node
+from app.graphs.nodes.safety import safety_node
+from app.graphs.nodes.safety import route_from_checker
+from app.graphs.nodes.weather import weather_node
+from app.graphs.nodes.planner import planner_node
+from app.graphs.nodes.hydration import hydration_node
 
 
-def weather_node(state: OverallState):
-    print(f"Executing Agent: {inspect.currentframe().f_code.co_name}")
-    country = state.country.strip()
-    match = next(
-        (c for c in COUNTRY_COORDS if c["country"].lower() == country.lower()), None
+# helper nodes and routers
+def fanout_node(state: OverallState):
+    print(
+        f"[{inspect.currentframe().f_code.co_name}] Routing to nutrition node and weather node"
     )
-    if not match:
-        raise ValueError(f"No coordinates found for {country}")
-
-    lat, lon = match["lat"], match["lon"]
-
-    url = (
-        f"https://api.open-meteo.com/v1/forecast?"
-        f"latitude={lat}&longitude={lon}"
-        "&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean"
-        "&timezone=auto"
-    )
-
-    res = requests.get(url).json()
-    daily = res.get("daily", {})
-    temps_max = daily.get("temperature_2m_max", [])
-    temps_min = daily.get("temperature_2m_min", [])
-    humidity = daily.get("relative_humidity_2m_mean", [])
-
-    if not temps_max or not temps_min or not humidity:
-        raise ValueError(f"Incomplete weather data for {country}")
-
-    avg_temp = sum((tmax + tmin) / 2 for tmax, tmin in zip(temps_max, temps_min)) / len(
-        temps_max
-    )
-    avg_humidity = sum(humidity) / len(humidity)
-
-    state.avg_temp = round(avg_temp, 2)
-    state.avg_humidity = round(avg_humidity, 1)
-
-    return state
+    return {}
 
 
-def planner_node(state: OverallState):
-    """
-    Generate a running training plan using the user's inputs with RAG context.
-    """
-    print(f"Executing Agent: {inspect.currentframe().f_code.co_name}")
-
-    weeks = state.weeks or 8
-    runner_profile = state.runner_profile or "Runner profile unavailable."
-    recent_runs = state.recent_runs or "No recent runs provided."
-    goal_description = state.goal_description or "No goal specified."
-    country = state.country or "Singapore"
-
-    if not isinstance(runner_profile, str):
-        runner_profile_text = runner_profile.model_dump()
-        # Extract fitness level if available
-        fitness_level = getattr(runner_profile, 'fitness_level', None) or "Intermediate"
-    else:
-        runner_profile_text = runner_profile
-        fitness_level = "Intermediate"
-
-    # -------------------------
-    # Retrieve RAG Context
-    # -------------------------
-    rag_context = ""
-    if RAG_AVAILABLE and settings.SUPABASE_URL and settings.SUPABASE_SERVICE_KEY:
-        try:
-            print("🔍 Retrieving RAG context from knowledge base...")
-            rag_engine = RAGQueryEngine(similarity_threshold=0.6, max_results=5)
-            
-            # Build queries to gather relevant context
-            queries = []
-            
-            # General training periodization for the goal
-            queries.append({
-                "query": f"training plan structure for {goal_description} {fitness_level}",
-                "category": "Core Training Knowledge",
-                "subcategory": "Training periodisation, base-build-taper",
-                "context": "training_plan"
-            })
-            
-            # Intensity zones and pace
-            queries.append({
-                "query": "heart rate zones and pace for running training",
-                "category": "Core Training Knowledge",
-                "subcategory": "Intensity zones, HR pace",
-                "context": "training_plan"
-            })
-            
-            # Progression guidelines (10% rule, ACWR)
-            queries.append({
-                "query": "weekly mileage progression and training load management",
-                "category": "Core Training Knowledge",
-                "subcategory": "Progression & load (10 % rule, ACWR)",
-                "context": "training_plan"
-            })
-            
-            # Location-specific advice (Singapore)
-            if country.lower() == "singapore" or "singapore" in country.lower():
-                queries.append({
-                    "query": "running training in heat and humidity adaptation",
-                    "category": "SG Context",
-                    "subcategory": "Heat and humidity adaptation",
-                    "context": "training_plan"
-                })
-                
-                queries.append({
-                    "query": "running routes and locations in Singapore",
-                    "category": "SG Context",
-                    "subcategory": "Running routes",
-                    "context": "training_plan"
-                })
-                
-                # Singapore training guidelines
-                queries.append({
-                    "query": "Singapore running guidelines and safety",
-                    "category": "SG Context",
-                    "subcategory": "Guidelines",
-                    "context": "training_plan"
-                })
-            
-            # Injury prevention
-            queries.append({
-                "query": "injury prevention and safe running practices",
-                "category": "Core Training Knowledge",
-                "subcategory": "Injury prevention, Form, Cadence",
-                "context": "training_plan"
-            })
-            
-            # Recovery and nutrition
-            queries.append({
-                "query": "recovery HRV sleep and nutrition for runners",
-                "category": "Core Training Knowledge",
-                "context": "training_plan"
-            })
-            
-            # Gather all relevant context
-            all_context_parts = []
-            for query_info in queries:
-                try:
-                    results = rag_engine.search_documents(**query_info)
-                    for result in results:
-                        content = result.get('content', '')
-                        metadata = result.get('metadata', {})
-                        similarity = result.get('similarity', 0)
-                        
-                        if content and similarity > 0.6:  # Only include highly relevant content
-                            source = f"[{metadata.get('filename', 'Unknown')}]"
-                            if metadata.get('category'):
-                                source += f" ({metadata['category']}"
-                                if metadata.get('subcategory'):
-                                    source += f" > {metadata['subcategory']}"
-                                source += ")"
-                            
-                            all_context_parts.append(f"{source}\n{content}")
-                except Exception as e:
-                    print(f"Warning: Failed to retrieve context for query: {query_info.get('query')} - {e}")
-                    continue
-            
-            if all_context_parts:
-                rag_context = "\n\n---\n\n".join(all_context_parts)
-                print(f"✅ Retrieved {len(all_context_parts)} relevant context chunks from RAG")
-            else:
-                print("⚠️ No relevant RAG context found")
-                
-        except Exception as e:
-            print(f"⚠️ Error retrieving RAG context: {e}")
-            print("Continuing without RAG context...")
-            rag_context = ""
-    else:
-        print("ℹ️ RAG not available - proceeding without knowledge base context")
-        if not RAG_AVAILABLE:
-            print("  (RAGQueryEngine not imported)")
-        elif not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_KEY:
-            print("  (SUPABASE_URL or SUPABASE_SERVICE_KEY not configured)")
-
-    # -------------------------
-    # Build enhanced system message with RAG context
-    # -------------------------
-    system_msg = """You are a long-distance running coach with access to evidence-based training knowledge.
-
-You must:
-- Be conservative about sudden mileage increases (follow the 10% rule).
-- Respect injuries and constraints.
-- Use the runner's preferred units (km or miles).
-- Align workouts with available days.
-- Include pace or effort where possible.
-- Follow evidence-based training principles from the provided knowledge base.
-- Reply STRICTLY using the TrainingPlan JSON schema (no extra keys)."""
-
-    # Format recent runs for prompt
-    if isinstance(recent_runs, str):
-        recent_runs_text = recent_runs
-    elif recent_runs and len(recent_runs) > 0:
-        recent_runs_text = "\n".join([f"- {r.model_dump()}" for r in recent_runs])
-    else:
-        recent_runs_text = "No recent runs provided"
-    
-    # Build user prompt with RAG context
-    user_prompt_parts = [f"""Create a {weeks}-week training plan.
-
-Runner profile:
-{runner_profile_text}
-
-Recent runs:
-{recent_runs_text}
-
-Goal:
-{goal_description}
-
-Location: {country}"""]
-    
-    # Add weather context if available
-    if state.avg_temp is not None and state.avg_humidity is not None:
-        user_prompt_parts.append(f"""
-Weather conditions:
-- Average temperature: {state.avg_temp}°C
-- Average humidity: {state.avg_humidity}%
-""")
-    
-    # Add RAG context if available
-    if rag_context:
-        user_prompt_parts.append(f"""
-TRAINING KNOWLEDGE BASE (Use this as reference for evidence-based recommendations):
-{rag_context}
-
-IMPORTANT: Use the knowledge base context to inform your training plan. Follow:
-- Training periodization principles (base, build, taper phases)
-- Intensity zone guidelines for workouts
-- Safe progression rules (10% rule, ACWR)
-- Location-specific considerations for {country}
-- Injury prevention best practices
-""")
-    
-    user_prompt_parts.append("""
-Respond ONLY with JSON that matches the TrainingPlan schema.
-""")
-    
-    user_prompt = "\n".join(user_prompt_parts)
-
-    # Create prompt with the complete user message (not using template variables)
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_msg),
-            ("human", "{user_input}"),
-        ]
-    )
-
-    chain = prompt | model.with_structured_output(TrainingPlan)
-    plan: TrainingPlan = chain.invoke(
-        {
-            "user_input": user_prompt,
-        }
-    )
-    plan_text = plan.model_dump_json(indent=2)
-    messages = state.messages or []
-    messages.append(
-        HumanMessage(
-            content=f"Generate a {weeks}-week training plan for:\n{goal_description}"
-        )
-    )
-    messages.append(AIMessage(content=plan_text))
-
-    return {
-        "plan": plan,
-        "messages": messages,
-    }
-
-
-def classify_intent_node(state: OverallState):
-    print(f"Executing Agent: {inspect.currentframe().f_code.co_name}")
-
-    prompt = f"""You are an intent classifier.
-    User instruction: "{state.instruction}"
-
-    Possible intents: ["planning", "revise", "advice"]
-    For now always return "planning".
-    Respond with only the intent label.
-    """
-    response = model.invoke(prompt)
-    intent = response.content.strip().lower()
-    messages = state.messages or []
-    messages.append(
-        HumanMessage(content=f"[INTENT CLASSIFICATION INPUT]\n{state.instruction}")
-    )
-    messages.append(AIMessage(content=f"[INTENT CLASSIFICATION OUTPUT]\n{intent}"))
-
-    return {
-        "intent": intent,
-        "messages": messages,
-    }
-
-
-def route_from_intent(state: OverallState):
-    if state.intent == "planning":
-        return "weather_node"
-    else:
-        return END
-
-
-def route_node(state: OverallState):
-    """
-    Route planning node - enriches training plan with route suggestions based on location.
-    Fetches route recommendations from OneMap API (Singapore) if address is provided.
-    """
-    print(f"Executing Agent: {inspect.currentframe().f_code.co_name}")
-    print(f"DEBUG - Address received: {state.address}")
-    print(f"DEBUG - Country received: {state.country}")
-    
-    # Check if we have a plan to work with
-    if not state.plan:
-        print("⚠️ No training plan available for route enrichment")
-        return {"messages": state.messages or []}
-    
-    print(f"DEBUG - Plan has {len(state.plan.weekly_plans)} weeks")
-    
-    # Get address from state
-    address = state.address
-    
-    # Only process routes for Singapore with a valid address
-    if not address or state.country.lower() != "singapore":
-        print(f"ℹ️ Skipping route planning (address: {address}, country: {state.country})")
-        messages = state.messages or []
-        messages.append(
-            HumanMessage(content="[ROUTE PLANNING] Skipping route planning - address not provided or country not Singapore")
-        )
-        return {"messages": messages}
-    
-    messages = state.messages or []
-    
-    try:
-        from app.lib.onemap_utils import suggest_routes_for_distance
-        
-        print(f"🗺️ Fetching route recommendations for: {address}")
-        messages.append(
-            HumanMessage(content=f"[ROUTE PLANNING] Searching routes from: {address}")
-        )
-        
-        # Find all runs in the plan and suggest routes (except rest days)
-        route_suggestions = []
-        routes_generated = 0
-        
-        # Count all workouts that need routes for debugging
-        workout_count = 0
-        for week in state.plan.weekly_plans:
-            for workout in week.workouts:
-                if workout.focus != "rest" and workout.distance_km > 0:
-                    workout_count += 1
-        
-        print(f"DEBUG - Found {workout_count} workouts with distance > 0 in the plan")
-        
-        # Create a new plan with modified workouts (Pydantic models are immutable)
-        modified_weekly_plans = []
-        
-        for week in state.plan.weekly_plans:
-            modified_workouts = []
-            
-            for workout in week.workouts:
-                # Create a copy of the workout data
-                workout_dict = workout.model_dump()
-                
-                # Generate routes for all runs (skip rest days and zero-distance workouts)
-                if workout.focus != "rest" and workout.distance_km > 0:
-                    print(f"📍 Generating route for Week {week.week_number}, {workout.day}: {workout.distance_km}km ({workout.focus})")
-                    
-                    # Get route suggestion
-                    routes = suggest_routes_for_distance(
-                        address=address,
-                        target_distance_km=workout.distance_km,
-                        num_suggestions=1
-                    )
-                    
-                    if routes and len(routes) > 0:
-                        route = routes[0]
-                        
-                        # Build route description with ALL directions
-                        route_desc = f"🗺️ Suggested {route['distance_km']}km route from {address}"
-                        
-                        if route.get('directions'):
-                            num_directions = len(route['directions'])
-                            route_desc += f"\n\n📍 Turn-by-turn directions ({num_directions} steps):\n"
-                            
-                            # Include ALL directions, not just the first 3
-                            for i, direction in enumerate(route['directions'], 1):
-                                route_desc += f"{i}. {direction}\n"
-                        
-                        # Append to workout notes in the dict
-                        original_notes = workout_dict.get('notes') or ""
-                        if original_notes:
-                            workout_dict['notes'] = f"{original_notes}\n\n{route_desc}"
-                        else:
-                            workout_dict['notes'] = route_desc
-                        
-                        print(f"✅ Added route to workout notes: {workout_dict['notes'][:50]}...")
-                        
-                        route_suggestions.append(
-                            f"Week {week.week_number}, {workout.day}: {workout.distance_km}km - Route added"
-                        )
-                        routes_generated += 1
-                    else:
-                        print(f"⚠️ Could not generate route for {workout.distance_km}km")
-                
-                # Create new Workout instance with potentially modified notes
-                from app.models.plan import Workout
-                modified_workouts.append(Workout(**workout_dict))
-            
-            # Create new WeeklyPlan with modified workouts
-            from app.models.plan import WeeklyPlan
-            modified_weekly_plans.append(
-                WeeklyPlan(
-                    week_number=week.week_number,
-                    focus_summary=week.focus_summary,
-                    workouts=modified_workouts
-                )
-            )
-        
-        # Create new TrainingPlan with modified weekly plans
-        from app.models.plan import TrainingPlan
-        modified_plan = TrainingPlan(
-            goal_description=state.plan.goal_description,
-            plan_duration_weeks=state.plan.plan_duration_weeks,
-            weekly_overview=state.plan.weekly_overview,
-            weekly_plans=modified_weekly_plans
-        )
-        
-        # Add summary to messages
-        if route_suggestions:
-            route_summary = f"Generated {routes_generated} route(s):\n" + "\n".join(route_suggestions)
-            messages.append(
-                AIMessage(content=f"[ROUTE PLANNING] {route_summary}")
-            )
-            print(f"✅ Generated {routes_generated} routes successfully")
-        else:
-            messages.append(
-                AIMessage(content="[ROUTE PLANNING] No workouts with distance found requiring route planning")
-            )
-            print("ℹ️ No workouts with distance found for route planning")
-            
-        return {
-            "messages": messages,
-            "plan": modified_plan,  # Return the new modified plan
-        }
-            
-    except ImportError:
-        print("❌ OneMap utilities not available")
-        messages.append(
-            AIMessage(content="[ROUTE PLANNING] Error: OneMap utilities not available")
-        )
-        return {"messages": messages}
-    except Exception as e:
-        print(f"❌ Error in route planning: {e}")
-        import traceback
-        traceback.print_exc()
-        messages.append(
-            AIMessage(content=f"[ROUTE PLANNING] Error: {str(e)}")
-        )
-        return {"messages": messages}
-
-
-def safety_node(state: OverallState):
-    prompt = f"""
-You are RunBuddy's safety evaluator.
-
-Your job is to check whether the following generated training plan looks
-reasonable and safe for the runner.
-
-User instruction:
-{state.instruction}
-
-Training plan to review:
-{state.plan.model_dump()}
-
-Consider the following:
-- Are there any unsafe or excessive weekly mileage increases?
-- Are there enough rest or easy days?
-- Does the plan escalate volume and intensity gradually?
-- Does it appear achievable for a normal recreational runner?
-- Are injury or overtraining risks mentioned or implicitly handled?
-
-Respond with a short, **verbose evaluation** beginning with either:
-"approved" – if the plan looks safe enough overall,
-or
-"reject" – if the plan seems unsafe or poorly structured.
-
-Then briefly explain why.
-"""
-    print(f"Executing Agent: {inspect.currentframe().f_code.co_name}")
-    response = model.invoke(prompt)
-    text = response.content.strip()
-
-    approved = text.lower().startswith("approved")
-    next_plan = state.plan
-
-    messages = state.messages or []
-    messages.append(
-        HumanMessage(content="[SAFETY CHECK INPUT]\n" + state.plan.model_dump_json())
-    )
-    messages.append(AIMessage(content="[SAFETY CHECK OUTPUT]\n" + text))
-
-    return {
-        "approved": approved,
-        "plan": next_plan,
-        "messages": messages,
-    }
-
-
-def route_from_checker(state: OverallState):
-    if state.approved:
-        return END
-    else:
-        return "classify_intent_node"
+def plan_ready_router(state: OverallState):
+    """Proceed to safety only once a plan exists; otherwise END this branch."""
+    out = "safety_node" if state.plan is not None else END
+    print(f"[{inspect.currentframe().f_code.co_name}] -> {out}")
+    return out
 
 
 # ----------------- Graph compilation -----------------
 
 builder = StateGraph(OverallState)
 
+# Nodes
 builder.add_node("classify_intent_node", classify_intent_node)
+builder.add_node("fanout_node", fanout_node)
 builder.add_node("weather_node", weather_node)
+builder.add_node("nutrition_node", nutrition_node)
+builder.add_node("hydration_node", hydration_node)
 builder.add_node("planner_node", planner_node)
 builder.add_node("route_node", route_node)
 builder.add_node("safety_node", safety_node)
 
+# Flow
 builder.add_edge(START, "classify_intent_node")
-builder.add_conditional_edges(
-    "classify_intent_node", route_from_intent, ["weather_node"]
-)
+builder.add_conditional_edges("classify_intent_node", route_from_intent, ["fanout_node"])
+
+builder.add_edge("fanout_node", "weather_node")
+builder.add_edge("fanout_node", "nutrition_node")
+builder.add_edge("nutrition_node", "hydration_node")
+
 builder.add_edge("weather_node", "planner_node")
 builder.add_edge("planner_node", "route_node")
-builder.add_edge("route_node", "safety_node")
+builder.add_conditional_edges("route_node", plan_ready_router, ["safety_node"])
 
-builder.add_conditional_edges(
-    "safety_node",
-    route_from_checker,
-    ["classify_intent_node", END],
-)
+builder.add_conditional_edges("safety_node", route_from_checker, ["classify_intent_node", END])
 
 graph = builder.compile()
+
+
+# visualising graph
+try:
+    from pathlib import Path
+
+    # Render the graph as a Mermaid diagram (xray=True shows node/edge details)
+    img_bytes = graph.get_graph(xray=True).draw_mermaid_png()
+
+    # Save it inside your working folder (e.g., same folder as this file)
+    output_path = Path(__file__).parent / "runbuddy_graph.png"
+    with open(output_path, "wb") as f:
+        f.write(img_bytes)
+
+    print(f"LangGraph visualization regenerated: {output_path.resolve()}")
+
+except Exception as e:
+    print(f"Failed to auto-generate LangGraph diagram: {e}")

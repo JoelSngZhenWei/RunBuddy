@@ -8,7 +8,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { WeeklyPlan } from "@/lib/types/runbuddy";
+import { WeeklyPlan } from "@/lib/types";
 import { WorkoutGraph } from "./WorkoutGraph";
 
 type WeeklyPlanCardProps = {

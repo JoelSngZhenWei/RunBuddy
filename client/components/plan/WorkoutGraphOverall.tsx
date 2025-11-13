@@ -22,7 +22,7 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart";
-import { WeeklyPlan, Workout } from "@/lib/types/runbuddy";
+import { WeeklyPlan, Workout } from "@/lib/types";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

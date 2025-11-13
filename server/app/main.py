@@ -3,12 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.rag import router as rag_router
 from app.routes.plan import router as plan_router
 
-from app.graphs.runbuddy_graph import (
-    TrainingPlan,
-)
 from app.models.requests import PlanRequest
 from app.services.langgraph_service import generate_training_plan
-
+from app.models.plan import TrainingPlan
+from app.models.response import PlanResponse
 app = FastAPI(title="RunBuddy API")
 
 app.add_middleware(
@@ -29,6 +27,6 @@ def root():
 
 
 # You can just return TrainingPlan directly
-@app.post("/plan", response_model=TrainingPlan)
+@app.post("/plan", response_model=PlanResponse)
 def generate_plan(req: PlanRequest):
     return generate_training_plan(req)

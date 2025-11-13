@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     SUPABASE_URL: str | None = None
     SUPABASE_SERVICE_KEY: str | None = None
+    NEXT_PUBLIC_ONEMAP_TOKEN: str | None = None
     
     model_config = SettingsConfigDict(
         env_file=".env",

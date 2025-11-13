@@ -1,5 +1,6 @@
 from app.graphs.runbuddy_graph import graph, OverallState
 from app.models.requests import PlanRequest
+from app.models.response import PlanResponse
 
 
 def generate_training_plan(req: PlanRequest):
@@ -13,4 +14,9 @@ def generate_training_plan(req: PlanRequest):
         address=req.address,
     )
     result = graph.invoke(state)
-    return result["plan"]
+    # return result["plan"]
+    return PlanResponse(
+        plan=result["plan"],
+        hydration_plan=result.get("hydration_plan"),
+        nutrition_plan=result.get("nutrition_plan"),
+    )

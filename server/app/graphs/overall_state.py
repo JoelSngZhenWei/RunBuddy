@@ -7,6 +7,9 @@ from app.models.plan import TrainingPlan
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
+from app.models.nutrition import NutritionPlan
+from app.models.hydration import HydrationPlan
+
 class OverallState(BaseModel):
     instruction: str
     country: str
@@ -15,7 +18,8 @@ class OverallState(BaseModel):
     weeks: int | None = None
     recent_runs: Optional[List[RecentRun]] = None
     goal_description: str | None = None
-
+    address: Optional[str] = None
+    
     # system state
     approved: bool | None = None
     intent: str | None = None
@@ -24,6 +28,9 @@ class OverallState(BaseModel):
     # weather state
     avg_temp: Optional[float] = None
     avg_humidity: Optional[float] = None
-
+    
+    nutrition_plan: Optional[NutritionPlan] = None
+    hydration_plan: Optional[HydrationPlan] = None 
+    
     messages: Annotated[List[AnyMessage], add_messages] = []
     model_config = {"arbitrary_types_allowed": True}

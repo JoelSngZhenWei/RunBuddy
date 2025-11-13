@@ -228,7 +228,7 @@ def suggest_routes_for_distance(
         print(f"⚠️ Could not find coordinates for address: {address}")
         return []
     
-    print(f"📍 Found coordinates: {start_point.latitude}, {start_point.longitude}")
+    # print(f"📍 Found coordinates: {start_point.latitude}, {start_point.longitude}")
     
     # Generate routes in different directions
     directions = ["north", "northeast", "east", "southeast"][:num_suggestions]

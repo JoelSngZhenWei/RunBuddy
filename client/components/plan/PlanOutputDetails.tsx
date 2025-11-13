@@ -179,10 +179,6 @@ export default function PlanOutputDetails() {
                                     </div>
                                 </div>
 
-                                <div className="border rounded-lg">
-                                    <OverallWorkoutGraph weeklyPlans={generatedPlan.weekly_plans} />
-                                </div>
-
                                 {/* Weekly Cards */}
                                 {generatedPlan.weekly_plans.map((week) => (
                                     <WeeklyPlanCard key={week.week_number} week={week} />
@@ -190,43 +186,13 @@ export default function PlanOutputDetails() {
                             </div>
                         </TabsContent>
 
-                        {/* Tab 2: Your Workout at a Glance (new component) */}
+                        {/* Tab 2: Your Workout at a Glance */}
                         <TabsContent value="glance" className="mt-0">
                             <WorkoutAtAGlance plan={generatedPlan} />
                         </TabsContent>
                     </Tabs>
                 </ScrollArea>
             </CardContent>
-            // <CardContent className="space-y-6 text-sm">
-            //     <ScrollArea className="h-[85vh] pb-10">
-            //         <div className="prose prose-sm dark:prose-invert max-w-none">
-            //             <ReactMarkdown
-            //                 components={{
-            //                     h1: ({node, ...props}) => <h1 className="font-bold text-xl mb-3 mt-6" {...props} />,
-            //                     h2: ({node, ...props}) => <h2 className="font-semibold text-lg mb-2 mt-5" {...props} />,
-            //                     h3: ({node, ...props}) => <h3 className="font-semibold text-base mb-2 mt-4" {...props} />,
-            //                     h4: ({node, ...props}) => <h4 className="font-medium text-sm mb-1 mt-3" {...props} />,
-            //                     p: ({node, ...props}) => <p className="text-muted-foreground mb-3" {...props} />,
-            //                     ul: ({node, ...props}) => <ul className="list-disc list-inside text-muted-foreground space-y-1 mb-4" {...props} />,
-            //                     ol: ({node, ...props}) => <ol className="list-decimal list-inside text-muted-foreground space-y-1 mb-4" {...props} />,
-            //                     li: ({node, ...props}) => <li className="text-muted-foreground" {...props} />,
-            //                     strong: ({node, ...props}) => <strong className="font-semibold text-foreground" {...props} />,
-            //                     em: ({node, ...props}) => <em className="italic" {...props} />,
-            //                 }}
-            //             >
-            //                 {generatedPlan.plan}
-            //             </ReactMarkdown>
-
-            //             {generatedPlan.metadata?.calendarIntegration && (
-            //                 <div className="mt-6 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-            //                     <p className="text-sm text-green-800 dark:text-green-200">
-            //                         ✓ This plan has been customized based on your Google Calendar schedule
-            //                     </p>
-            //                 </div>
-            //             )}
-            //         </div>
-            //     </ScrollArea>
-            // </CardContent>
         )
     }
 

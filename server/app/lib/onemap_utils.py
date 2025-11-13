@@ -26,7 +26,7 @@ def search_address(search_query: str) -> Optional[RoutePoint]:
         RoutePoint with latitude/longitude, or None if not found
     """
     try:
-        token = settings.NEXT_PUBLIC_ONEMAP_TOKEN if hasattr(settings, 'NEXT_PUBLIC_ONEMAP_TOKEN') else None
+        token = settings.NEXT_PUBLIC_ONEMAP_TOKEN
         
         if not token:
             print("⚠️ OneMap API token not configured")
@@ -73,7 +73,7 @@ def get_route(start: RoutePoint, end: RoutePoint) -> Optional[Dict[str, Any]]:
         Route data dictionary with distance, instructions, etc.
     """
     try:
-        token = settings.NEXT_PUBLIC_ONEMAP_TOKEN if hasattr(settings, 'NEXT_PUBLIC_ONEMAP_TOKEN') else None
+        token = settings.NEXT_PUBLIC_ONEMAP_TOKEN
         
         url = "https://www.onemap.gov.sg/api/public/routingsvc/route"
         params = {

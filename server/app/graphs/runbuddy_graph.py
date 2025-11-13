@@ -1,22 +1,18 @@
 # runbuddy_graph.py
 import os
 import sys
-from typing import Annotated, List, Optional
 import inspect
 from pathlib import Path
 
-from pydantic import BaseModel
-from langchain_core.messages import AnyMessage, HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain.chat_models import init_chat_model
-from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, START, END
 import requests
 
 from app.core.config import settings
 from app.core.coords import COUNTRY_COORDS
-from app.models.runner import RunnerProfile
 from app.models.plan import TrainingPlan
-from app.models.runs import RecentRun
+from app.graphs.overall_state import OverallState
 
 # Add server directory to path for RAG imports
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -26,28 +22,6 @@ try:
 except ImportError:
     print("Warning: RAG system not available. Install dependencies and set SUPABASE_URL/SUPABASE_SERVICE_KEY")
     RAG_AVAILABLE = False
-
-
-class OverallState(BaseModel):
-    instruction: str
-    country: str
-    # user inputs
-    runner_profile: Optional[RunnerProfile] = None
-    weeks: int | None = None
-    recent_runs: Optional[List[RecentRun]] = None
-    goal_description: str | None = None
-
-    # system state
-    approved: bool | None = None
-    intent: str | None = None
-    plan: TrainingPlan | None = None
-
-    # weather state
-    avg_temp: Optional[float] = None
-    avg_humidity: Optional[float] = None
-
-    messages: Annotated[List[AnyMessage], add_messages] = []
-    model_config = {"arbitrary_types_allowed": True}
 
 
 # ----------------- Model init -----------------

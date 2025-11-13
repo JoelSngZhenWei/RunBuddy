@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     STRAVA_CLIENT_SECRET: str | None = None
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None
+    OPENAI_API_KEY: str
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
+    NEXT_PUBLIC_ONEMAP_TOKEN: str = ""
 
     OPENAI_API_KEY: str | None = None
     app_env: str = "development"

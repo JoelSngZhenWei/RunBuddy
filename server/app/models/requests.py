@@ -11,3 +11,4 @@ class PlanRequest(BaseModel):
     runner_profile: Optional[RunnerProfile] = None
     recent_runs: Optional[List[RecentRun]] = None
     goal_description: Optional[str] = None
+    address: Optional[str] = None

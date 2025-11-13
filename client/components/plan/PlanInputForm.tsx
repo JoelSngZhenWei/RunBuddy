@@ -60,6 +60,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
       use_wearable: false,
       wearable_data: activitySummaries.sedentary,
       activity_level: "sedentary" as const,
+      address: "",
     },
   });
 
@@ -277,7 +278,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
     ];
     const payload: PlanRequestBody = {
       instruction: `Build a ${weeks}-week training plan for ${values.goal_event} with target: ${values.goal_target}`,
-      country: "Singapore",
+      country: values.country || "Singapore",
       weeks,
       runner_profile: {
         name: "Joel Sng",
@@ -297,6 +298,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
       },
       recent_runs,
       goal_description: goalDescription,
+      address: values.address || undefined,
     };
 
     console.log("=== HELLO PAYLOAD SENT TO /api/plan ===");
@@ -314,7 +316,7 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
       setGeneratedPlan(plan);
 
       toast("Plan generated successfully", {
-        description: `Generated a ${plan.plan_duration_weeks}-week plan for ${plan.runner_name}`,
+        description: `Generated a ${plan.plan_duration_weeks}-week plan for the user.`,
       });
     } catch (error) {
       console.error("Error generating plan:", error);
@@ -506,6 +508,25 @@ export function PlanInputForm({ focus }: { focus: "input" | "output" }) {
                   {showAllContent && (
                     <FormDescription>
                       Any past injuries you would like to highlight.
+                    </FormDescription>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start/End Address (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., 123 Kim Tian Road, 160123" {...field} />
+                  </FormControl>
+                  {showAllContent && (
+                    <FormDescription>
+                      Starting and ending point for your runs.
                     </FormDescription>
                   )}
                   <FormMessage />

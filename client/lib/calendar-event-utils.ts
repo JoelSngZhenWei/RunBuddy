@@ -1,5 +1,5 @@
 // lib/calendar-event-utils.ts
-import type { TrainingPlan, Workout, WeeklyPlan } from "@/lib/types/runbuddy"
+import type { TrainingPlan, Workout } from "@/lib/types"
 
 export interface CalendarEventInput {
   summary: string

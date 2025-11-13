@@ -15,11 +15,6 @@ const navigation = [
         icon: Sparkles,
     },
     {
-        name: "Test",
-        url: "/test",
-        icon: Wrench,
-    },
-    {
         name: "Code",
         url: "https://github.com/JoelSngZhenWei/RunBuddy",
         icon: Code,

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PlanRequestBody, TrainingPlan } from "@/lib/types/runbuddy";
+import type { PlanRequestBody, TrainingPlan } from "@/lib/types";
 import { requestTrainingPlan } from "@/lib/api/runbuddy";
 
 export function useTrainingPlan() {

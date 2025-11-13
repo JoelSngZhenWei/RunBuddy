@@ -66,7 +66,7 @@ try:
     from pathlib import Path
 
     # Render the graph as a Mermaid diagram (xray=True shows node/edge details)
-    img_bytes = graph.get_graph(xray=True).draw_mermaid_png()
+    img_bytes = graph.get_graph(xray=True).draw_mermaid_png(background_color="transparent")
 
     # Save it inside your working folder (e.g., same folder as this file)
     output_path = Path(__file__).parent / "runbuddy_graph.png"

@@ -13,10 +13,12 @@ export const trainingPlanSchema = z.object({
         message: "Goal target should be at least 5 characters (e.g. Finish under 2 hours).",
     }),
 
-    days_per_week: z
-        .number()
-        .min(1, { message: "You must train at least once a week." })
-        .max(7, { message: "Maximum is 7 training days per week." }),
+    available_days: z
+        .array(
+            z.enum(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
+        )
+        .min(1, { message: "You must select at least one day." })
+        .max(7, { message: "You can’t select more than 7 days." }),
 
     current_weekly_km: z
         .number()
@@ -31,15 +33,15 @@ export const trainingPlanSchema = z.object({
     }),
 
     injury: z
-    .string()
-    .optional(),
-    
+        .string()
+        .optional(),
+
     start_date: z.string().date("Invalid start date"),
     goal_date: z.string().date("Invalid goal date"),
-    
+
     use_calendar: z.boolean().default(false).optional(),
     calendar_events_summary: z.string().optional(),
-    
+
     use_wearable: z.boolean().default(false).optional(),
     wearable_data: activitySummarySchema.optional(),
     activity_level: activityLevelSchema.optional(),

@@ -3,8 +3,6 @@
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PlanInputForm } from "./PlanInputForm"
 import { Bot, Edit2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import { ScrollArea } from "../ui/scroll-area"
 import { toast } from "sonner"
 
@@ -31,27 +29,6 @@ export default function PlanInput({
                             Customize or auto-fill from your Strava runs.
                         </CardDescription>
                         <CardAction className="h-12">
-                            <TooltipProvider>
-                                <Tooltip>
-
-                                    <TooltipTrigger asChild className="h-12">
-
-                                        <Button
-                                            title="Autofill from Strava"
-                                            variant="ghost"
-                                            size="icon-lg"
-                                            className="rounded-full w-12 text-strava h-full  hover:text-strava/80 border cursor-pointer transition-colors"
-                                            onClick={handleAutofill}
-                                        >
-                                            <Edit2 className="h-full w-full" />
-                                        </Button>
-                                    </TooltipTrigger>
-
-                                    <TooltipContent side="bottom">
-                                        <p>Auto fill from Strava.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
                         </CardAction>
                     </>
                 )}

@@ -1,6 +1,7 @@
 // client/app/api/plan/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import type { PlanRequestBody, TrainingPlan } from "@/lib/types/runbuddy";
+import { TrainingPlan, PlanRequestBody } from "@/lib/types";
+import { PlanResponse } from "@/lib/types";
 
 const BASE_URL = process.env.RUNBUDDY_API_BASE_URL;
 
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+
     const body = (await req.json()) as PlanRequestBody;
 
     console.log(`Calling FastAPI backend at: ${BASE_URL}/plan`);
@@ -48,8 +50,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data = (await res.json()) as TrainingPlan;
-    console.log("✓ Training plan generated successfully");
+    const data = (await res.json()) as PlanResponse;
+    console.log(data)
+    console.log("Training plan generated successfully");
     return NextResponse.json(data);
   } catch (err) {
     console.error("Error in /api/plan route:", err);

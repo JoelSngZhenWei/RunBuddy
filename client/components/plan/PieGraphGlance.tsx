@@ -1,4 +1,4 @@
-import { WeeklyPlan } from "@/lib/types/runbuddy"
+import { WeeklyPlan } from "@/lib/types"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
 import { useMemo } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible"

@@ -1,4 +1,4 @@
-import { WeeklyPlan, Workout } from "@/lib/types/runbuddy"
+
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
 import { useMemo } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible"
@@ -6,6 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card
 import { Button } from "../ui/button"
 import { ChevronDown } from "lucide-react"
 import { CartesianGrid, LabelList, Line, LineChart, XAxis, YAxis } from "recharts"
+import { WeeklyPlan, Workout } from "@/lib/types"
 
 const longRunPaceConfig = {
     pace: {

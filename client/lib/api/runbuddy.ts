@@ -1,5 +1,5 @@
-// client/lib/api/runbuddy.ts
-import type { PlanRequestBody, TrainingPlan } from "@/lib/types/runbuddy";
+
+import { TrainingPlan, PlanRequestBody } from "@/lib/types";
 
 export async function requestTrainingPlan(
   payload: PlanRequestBody

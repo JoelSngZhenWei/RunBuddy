@@ -8,7 +8,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { WeeklyPlan } from "@/lib/types/runbuddy";
+import { WeeklyPlan } from "@/lib/types";
 import { WorkoutGraph } from "./WorkoutGraph";
 
 type WeeklyPlanCardProps = {
@@ -131,9 +131,12 @@ export function WeeklyPlanCard({ week }: WeeklyPlanCardProps) {
                   </p>
 
                   {mainSelected?.notes && (
-                    <p className=" italic text-muted-foreground">
-                      Notes: {mainSelected.notes}
-                    </p>
+                    <div className="mt-2 rounded-md p-3 border border-border">
+                      <p className="text-sm font-medium mb-2">Notes</p>
+                      <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-96 overflow-y-auto">
+                        {mainSelected.notes}
+                      </div>
+                    </div>
                   )}
 
                 </div>

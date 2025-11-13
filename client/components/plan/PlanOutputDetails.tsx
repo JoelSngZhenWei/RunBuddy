@@ -1,16 +1,79 @@
 "use client"
 
-import { CardContent, CardHeader } from "../ui/card";
+import { CardContent } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 import { usePlan } from "@/contexts/PlanContext";
 import { WeeklyPlanCard } from "./PlanOutputWeeklyPlanCard";
-import { OverallWorkoutGraph } from "./WorkoutGraphOverall";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { WorkoutAtAGlance } from "./PlanOutputWorkoutGlance";
-
-
+import { Button } from "../ui/button";
+import { Calendar, XCircle, Loader2 } from "lucide-react";
+import { addPlanToGoogleCalendar } from "@/lib/calendar-event-utils";
+import { toast } from "sonner";
+import { useState } from "react";
+import * as React from "react";
+import { HydrationPlanDisplay } from "./nutritionhydration/hydration";
+import { DayKey } from "@/lib/types";
+import { NutritionPlanDisplay } from "./nutritionhydration/nutrition";
 export default function PlanOutputDetails() {
-    const { generatedPlan, isGenerating } = usePlan()
+    const { generatedPlan, hydrationPlan, nutritionPlan, isGenerating, planStartDate } = usePlan()
+    const [isAddingToCalendar, setIsAddingToCalendar] = useState(false)
+    const [isGoogleConnected, setIsGoogleConnected] = useState(false)
+    const [selectedDay, setSelectedDay] = React.useState<DayKey>("average_day")
+
+    // Check Google Calendar connection status
+    React.useEffect(() => {
+        const checkConnection = async () => {
+            try {
+                const response = await fetch("/api/google/events?start_date=2024-01-01&end_date=2024-01-02", {
+                    credentials: "same-origin",
+                })
+                setIsGoogleConnected(response.ok)
+            } catch {
+                setIsGoogleConnected(false)
+            }
+        }
+        checkConnection()
+    }, [])
+
+    const handleAddToCalendar = async () => {
+        if (!generatedPlan || !planStartDate) {
+            toast.error("Missing plan or start date", {
+                description: "Please regenerate the plan with a start date.",
+            })
+            return
+        }
+
+        if (!isGoogleConnected) {
+            toast.error("Not connected to Google Calendar", {
+                description: "Please connect your Google Calendar first.",
+            })
+            return
+        }
+
+        setIsAddingToCalendar(true)
+        try {
+            const result = await addPlanToGoogleCalendar(generatedPlan, planStartDate)
+
+            if (result.success) {
+                toast.success("Plan added to calendar!", {
+                    description: `Successfully added ${result.created} workout${result.created !== 1 ? 's' : ''} to your Google Calendar.`,
+                    duration: 5000,
+                })
+            } else {
+                toast.error("Some events failed to add", {
+                    description: `Added ${result.created} events, but ${result.failed} failed.`,
+                })
+            }
+        } catch (error: any) {
+            console.error("Error adding plan to calendar:", error)
+            toast.error("Failed to add plan to calendar", {
+                description: error.message || "Please try again or check your Google Calendar connection.",
+            })
+        } finally {
+            setIsAddingToCalendar(false)
+        }
+    }
 
     // If generating, show loading state
     if (isGenerating) {
@@ -32,7 +95,47 @@ export default function PlanOutputDetails() {
 
         return (
             <CardContent className="space-y-6 text-sm">
-                <ScrollArea className="h-[85vh] pb-10">
+                {/* Add to Calendar Button */}
+                {planStartDate && (
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                        <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            <div>
+                                <p className="text-sm font-medium">Add to Google Calendar</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Add all workouts from this plan to your calendar
+                                </p>
+                            </div>
+                        </div>
+                        {isGoogleConnected ? (
+                            <Button
+                                onClick={handleAddToCalendar}
+                                disabled={isAddingToCalendar}
+                                variant="default"
+                                size="sm"
+                            >
+                                {isAddingToCalendar ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Adding...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Calendar className="h-4 w-4 mr-2" />
+                                        Add to Calendar
+                                    </>
+                                )}
+                            </Button>
+                        ) : (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <XCircle className="h-4 w-4" />
+                                Not connected
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <ScrollArea className="h-[85vh] pb-16">
                     <Tabs defaultValue="breakdown" className="flex flex-col gap-4">
                         <TabsList className="w-full justify-start">
                             <TabsTrigger value="breakdown">
@@ -40,6 +143,9 @@ export default function PlanOutputDetails() {
                             </TabsTrigger>
                             <TabsTrigger value="glance">
                                 Your Workout at a Glance
+                            </TabsTrigger>
+                            <TabsTrigger value="nutrition">
+                                Nutrition & Hydration
                             </TabsTrigger>
                         </TabsList>
 
@@ -77,10 +183,6 @@ export default function PlanOutputDetails() {
                                     </div>
                                 </div>
 
-                                <div className="border rounded-lg">
-                                    <OverallWorkoutGraph weeklyPlans={generatedPlan.weekly_plans} />
-                                </div>
-
                                 {/* Weekly Cards */}
                                 {generatedPlan.weekly_plans.map((week) => (
                                     <WeeklyPlanCard key={week.week_number} week={week} />
@@ -88,43 +190,41 @@ export default function PlanOutputDetails() {
                             </div>
                         </TabsContent>
 
-                        {/* Tab 2: Your Workout at a Glance (new component) */}
+                        {/* Tab 2: Your Workout at a Glance */}
                         <TabsContent value="glance" className="mt-0">
-                            <WorkoutAtAGlance plan={generatedPlan} />
+                            <WorkoutAtAGlance plan={generatedPlan} hydrationPlan={hydrationPlan} nutritionPlan={nutritionPlan} />
+                        </TabsContent>
+
+                        <TabsContent value="nutrition" className="mt-0">
+                            <div className="sticky top-0 z-10 flex flex-wrap space-x-6 bg-card p-2">
+                                {(["average_day", "training_day", "race_day"] as DayKey[]).map((day) => (
+                                    <Button
+                                        key={day}
+                                        size="sm"
+                                        variant={selectedDay === day ? "default" : "outline"}
+                                        onClick={() => setSelectedDay(day)}
+                                    >
+                                        {day === "average_day"
+                                            ? "Average Day"
+                                            : day === "training_day"
+                                                ? "Training Day"
+                                                : "Race Day"}
+                                    </Button>
+                                ))}
+                            </div>
+                            <div className="grid grid-rows">
+                                <div className="">
+                                    <HydrationPlanDisplay hydrationPlan={hydrationPlan} selectedDay={selectedDay} onSelectedDayChange={setSelectedDay} />
+                                </div>
+                                <div className="">
+                                    <NutritionPlanDisplay nutritionPlan={nutritionPlan} selectedDay={selectedDay} onSelectedDayChange={setSelectedDay} />
+                                </div>
+                            </div>
+
                         </TabsContent>
                     </Tabs>
                 </ScrollArea>
             </CardContent>
-            // <CardContent className="space-y-6 text-sm">
-            //     <ScrollArea className="h-[85vh] pb-10">
-            //         <div className="prose prose-sm dark:prose-invert max-w-none">
-            //             <ReactMarkdown
-            //                 components={{
-            //                     h1: ({node, ...props}) => <h1 className="font-bold text-xl mb-3 mt-6" {...props} />,
-            //                     h2: ({node, ...props}) => <h2 className="font-semibold text-lg mb-2 mt-5" {...props} />,
-            //                     h3: ({node, ...props}) => <h3 className="font-semibold text-base mb-2 mt-4" {...props} />,
-            //                     h4: ({node, ...props}) => <h4 className="font-medium text-sm mb-1 mt-3" {...props} />,
-            //                     p: ({node, ...props}) => <p className="text-muted-foreground mb-3" {...props} />,
-            //                     ul: ({node, ...props}) => <ul className="list-disc list-inside text-muted-foreground space-y-1 mb-4" {...props} />,
-            //                     ol: ({node, ...props}) => <ol className="list-decimal list-inside text-muted-foreground space-y-1 mb-4" {...props} />,
-            //                     li: ({node, ...props}) => <li className="text-muted-foreground" {...props} />,
-            //                     strong: ({node, ...props}) => <strong className="font-semibold text-foreground" {...props} />,
-            //                     em: ({node, ...props}) => <em className="italic" {...props} />,
-            //                 }}
-            //             >
-            //                 {generatedPlan.plan}
-            //             </ReactMarkdown>
-
-            //             {generatedPlan.metadata?.calendarIntegration && (
-            //                 <div className="mt-6 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-            //                     <p className="text-sm text-green-800 dark:text-green-200">
-            //                         ✓ This plan has been customized based on your Google Calendar schedule
-            //                     </p>
-            //                 </div>
-            //             )}
-            //         </div>
-            //     </ScrollArea>
-            // </CardContent>
         )
     }
 
